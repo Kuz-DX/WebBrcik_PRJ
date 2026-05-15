@@ -12,6 +12,9 @@ const restartBtn = document.getElementById("restartBtn");
 let x, y, dx, dy, paddleX, brokenBricksCount;
 let isGameOver = false;
 
+let ballOpacity = 1.0; // 공의 투명도
+let opacityTimeoutId = null; // 투명도 복구 타이머 ID 15~16줄
+
 const ballRadius = 8;
 const paddleHeight = 10;
 const paddleWidth = 100;
@@ -57,6 +60,11 @@ function initGame() {
     paddleX = (canvas.width - paddleWidth) / 2;
     brokenBricksCount = 0;
     isGameOver = false;
+    ballOpacity = 1.0; // 투명도 초기화 63~67줄
+    if (opacityTimeoutId !== null) {
+        clearTimeout(opacityTimeoutId);
+        opacityTimeoutId = null;
+    }
 
     // 벽돌 상태 초기화
     for(let c = 0; c < brickColumnCount; c++) {
@@ -101,9 +109,26 @@ function collisionDetection() {
 function drawBall() {
     ctx.beginPath();
     ctx.arc(x, y, ballRadius, 0, Math.PI*2);
-    ctx.fillStyle = "red"; 
+    ctx.fillStyle = `rgba(255, 0, 0, ${ballOpacity})`; // RGBA를 사용하여 투명도 적용
     ctx.fill();
     ctx.closePath();
+}
+
+// 공 투명도 조절 함수
+function setBallOpacity(opacity) {
+    // 파라미터 0.0 ~ 1.0 범위제한
+    ballOpacity = Math.max(0.0, Math.min(1.0, opacity));
+
+    // 기존 타이머가 작동 중이면 취소
+    if (opacityTimeoutId !== null) {
+        clearTimeout(opacityTimeoutId);
+    }
+
+    // 10초 후 투명도를 1.0으로 복구
+    opacityTimeoutId = setTimeout(() => {
+        ballOpacity = 1.0;
+        opacityTimeoutId = null;
+    }, 10000);
 }
 
 function drawPaddle() {
@@ -144,6 +169,7 @@ function draw() {
     drawBall();
     drawPaddle();
     collisionDetection();
+    
 
     // 충돌 감지 직후 승리하여 isGameOver가 true로 바뀌었다면 진행 멈춤
     if (isGameOver) return; 
