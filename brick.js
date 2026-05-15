@@ -17,7 +17,8 @@ let opacityTimeoutId = null; // 투명도 복구 타이머 ID 15~16줄
 
 const ballRadius = 8;
 const paddleHeight = 10;
-const paddleWidth = 100;
+let paddleWidth = 100;
+let targetPaddleWidth = 100;
 
 const brickRowCount = 4;
 const brickColumnCount = 6;
@@ -71,6 +72,17 @@ for(let c = 0; c < brickColumnCount; c++) {
             bricks[c][r] = new Brick(brickX, brickY, {color: "#000000", effectFunc:()=>setBallOpacity(0.2)});
             continue;
         }
+
+        if(r==brickRowCount-4&&c==1){
+            bricks[c][r]=new Brick(brickX, brickY, {color: "blue",effectFunc:()=>subBarsize()});
+            continue;
+        }
+
+        if(r==brickRowCount-2&&c==3){
+            bricks[c][r]=new Brick(brickX, brickY, {color: "purple",effectFunc:()=>addBarsize()});
+            continue;
+        }
+
         bricks[c][r] = new Brick(brickX, brickY, {color: colors[r]}); //클래스로 생성
     }
 }
@@ -168,6 +180,14 @@ function setBallOpacity(opacity) {
     }, 10000);
 }
 
+
+function subBarsize(){
+    targetPaddleWidth = Math.max(40, targetPaddleWidth - 50);
+}
+
+function addBarsize(){
+    targetPaddleWidth = Math.min(canvas.width/2, targetPaddleWidth + 50);
+}
 function drawPaddle() {
     ctx.beginPath();
     ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
@@ -199,6 +219,17 @@ function draw() {
 
     // 충돌 감지 직후 승리하여 isGameOver가 true로 바뀌었다면 진행 멈춤
     if (isGameOver) return; 
+
+
+    let previousWidth = paddleWidth; 
+    paddleWidth += (targetPaddleWidth - paddleWidth) * 0.016; 
+   
+    paddleX -= (paddleWidth - previousWidth) / 2;
+
+    if (paddleX + paddleWidth > canvas.width) {
+        paddleX = canvas.width - paddleWidth;
+    }
+
 
     // 좌우 벽면 충돌
     if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
