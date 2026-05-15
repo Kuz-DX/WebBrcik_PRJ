@@ -30,11 +30,48 @@ const brickOffsetLeft = 35;
 let bricks = [];
 const totalBricks = brickRowCount * brickColumnCount;
 
-// 벽돌 배열 기본 생성 (최초 1회)
+//객체에서 Brick class로 변경, 속성이 많아질 거 같아 Object.assign으로 구현
+class Brick {
+    constructor(x, y, option = {}) { //생성할때 x,y는 필수로 넣고 나머지는 baseSettings 에서 바꾸고 싶은것만 {}로 감싸서 넣으면 됨, 없는 속성 추가도 가능
+        this.x = x;
+        this.y = y;
+
+        const baseSettings = {
+            status: 1, //status 0:깨진블록 1:일반블록
+            effectFunc: ()=>{}, //구현한 기능 함수
+            color: "#787878"
+        };
+
+        Object.assign(this, baseSettings, option);
+    }
+
+    onHit() { //블록 깼을때 기능 함수 실행
+        this.effectFunc();
+    }
+
+    draw(ctx) {
+        if (this.status !== 0) {
+            ctx.beginPath();
+            ctx.rect(this.x, this.y, brickWidth, brickHeight);
+            ctx.fillStyle = this.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+    }
+}
+
+// 벽돌 배열 기본 생성 (최초 1회) // 미리 X,Y 계산해서 객체 생성하도록 변경 60~62
+const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
 for(let c = 0; c < brickColumnCount; c++) {
     bricks[c] = [];
     for(let r = 0; r < brickRowCount; r++) {
-        bricks[c][r] = { x: 0, y: 0, status: 1 };
+        let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+        let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+        if(r == brickRowCount-1 && c == 2){ // 마지막행 3열에 테스트용 투명화 블록 생성
+            bricks[c][r] = new Brick(brickX, brickY, {color: "#000000", effectFunc:()=>setBallOpacity(0.2)});
+            continue;
+        }
+        bricks[c][r] = new Brick(brickX, brickY, {color: colors[r]}); //클래스로 생성
     }
 }
 
@@ -92,10 +129,10 @@ function collisionDetection() {
             let b = bricks[c][r];
             if(b.status === 1) {
                 if(x > b.x && x < b.x + brickWidth && y > b.y && y < b.y + brickHeight) {
-                    dy = -dy; 
+                    dy = -dy;
                     b.status = 0; 
                     brokenBricksCount++;
-                    
+                    b.onHit(); // 블럭 깼을때 블록에 맞는 효과 발동
                     if(brokenBricksCount === totalBricks) {
                         endGame("모든 벽돌을 제거했습니다. 승리!");
                     }
@@ -139,21 +176,10 @@ function drawPaddle() {
     ctx.closePath();
 }
 
-function drawBricks() {
+function drawBricks() { //Brick class에 draw 메소드 이용해 변경
     for(let c = 0; c < brickColumnCount; c++) {
         for(let r = 0; r < brickRowCount; r++) {
-            if(bricks[c][r].status === 1) {
-                let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
-                let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
-                bricks[c][r].x = brickX;
-                bricks[c][r].y = brickY;
-                ctx.beginPath();
-                ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
-                ctx.fillStyle = colors[r]; 
-                ctx.fill();
-                ctx.closePath();
-            }
+            bricks[c][r].draw(ctx);
         }
     }
 }
