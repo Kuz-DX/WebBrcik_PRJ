@@ -9,7 +9,14 @@
 
     <div id="gameContainer">
         <canvas id="gameCanvas" width="600" height="400"></canvas>
-        
+        <!-- 대화창 (필요할 때만 노출) -->
+        <div id="quest-box" class="dialogue-box">
+            <div id="speaker" class="speaker-name">sampleText</div>
+            <div class="dialogue-content">
+                <p id="dialogue">sampleText</p>
+            </div>
+            <div class="next-cursor" id="next-cursor">▼</div>
+        </div>
         <div id="gameOverScreen">
             <h2 id="gameOverMessage">게임 오버!</h2>
             <button id="restartBtn">다시 시작</button>
