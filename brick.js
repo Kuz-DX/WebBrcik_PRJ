@@ -207,6 +207,7 @@ function collisionDetection() {
                 b.onHit(); // 블럭 쳤을때 블록에 맞는 효과 발동
                 if(brokenBricksCount >= totalBricks) {
                     currentStage++;
+                    endGame("모든 벽돌 제거 승리!");
                     loadStage(currentStage);
                 }
             }
