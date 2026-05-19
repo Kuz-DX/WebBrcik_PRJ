@@ -151,13 +151,29 @@ function loadStage(stageIndex){
     bombs = []; // 폭탄 배열 초기화
 
     //stageIndexdp 따라 함수를 호출
-    if (stageIndex === 0) loadTutorialStage();
-    else if (stageIndex === 1) loadDiscreteStage();
-    else if (stageIndex === 2) loadStage3();
-    else if (stageIndex === 3) loadLunchStage();
-    else if (stageIndex === 4) loadStage4();
-    else if (stageIndex === 5) loadWebprogrammingStage();
-    else endGame("모든 스테이지를 클리어했습니다! 최종 승리!");
+    switch(stageIndex){
+        case 0:
+            loadTutorialStage();
+            break;
+        case 1:
+            loadDiscreteStage();
+            break;
+        case 2:
+            loadOopStage();
+            break;
+        case 3:
+            loadLunchStage();
+            break;
+        case 4:
+            loadDSStage4();
+            break;
+        case 5:
+            loadWebprogrammingStage();
+            break;
+        default:
+            endGame("모든 스테이지를 클리어했습니다! 최종 승리!");
+            break;
+    }
 }
 function loadTutorialStage(){
     // 벽돌 배열 기본 생성 (최초 1회) // 미리 X,Y 계산해서 객체 생성하도록 변경 
@@ -265,6 +281,7 @@ function collisionDetection() {
                 b.onHit(); // 블럭 쳤을때 블록에 맞는 효과 발동
                 if(brokenBricksCount >= totalBricks) {
                     currentStage++;
+                    endGame("모든 벽돌 제거 승리!");
                     loadStage(currentStage);
                 }
             }
