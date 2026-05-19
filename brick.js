@@ -395,7 +395,7 @@ initGame();
 
 //====================================
 
-function loadStage4() {
+function loadDSStage4() {
     // 스테이지 4의 벽돌 행과 열 개수 설정
     const brickRowCount = 3;
     const brickColumnCount = 4;
