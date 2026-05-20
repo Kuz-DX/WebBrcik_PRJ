@@ -35,7 +35,7 @@ let bombs = [];          // 폭탄들을 저장할 배열
 // 이벤트 리스너 추가
 document.addEventListener("mousemove", mouseMoveHandler, false);
 restartBtn.addEventListener("click", initGame); // 다시 시작 버튼 클릭 시 게임 초기화
-canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트 리스너 추가
+canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
 
 function mouseMoveHandler(e) {
     const relativeX = e.clientX - canvas.getBoundingClientRect().left;
@@ -46,7 +46,7 @@ function mouseMoveHandler(e) {
     }
 }
 
-function clickBombHandler(e) {
+function clickBombHandler(e) { //폭탄 클릭 핸들러
     const relativeX = e.clientX - canvas.getBoundingClientRect().left;
     const relativeY = e.clientY - canvas.getBoundingClientRect().top;
     
@@ -62,7 +62,7 @@ function clickBombHandler(e) {
     }
 }
 
-class Bomb {
+class Bomb { //폭탄배열
     constructor(x, y) {
         this.x = x;
         this.y = y;
@@ -262,6 +262,16 @@ function subBarsize(){
 function addBarsize(){
     targetPaddleWidth = Math.min(canvas.width/2, targetPaddleWidth + 50);
 }
+
+function spawnRandomBrick() { //블럭을 깨고 다시 블럭이 랜덤위치에 생성되는 기능
+    const randomX = Math.random() * (canvas.width - brickWidth);
+    const randomY = Math.random() * (canvas.height / 2 - brickHeight);
+    const colors = ["#E74C3C", "#9B59B6", "#3498DB", "#2ECC71", "#F1C40F"];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+    bricks.push(new Brick(randomX, randomY, { color: randomColor, effectFunc: () => {} }));
+    totalBricks++; // 클리어해야 할 전체 블록 개수 증가
+}
 //==============
 
 // 게임 종료 처리 함수
@@ -414,8 +424,9 @@ function loadDSStage4() {
                 { weight: 0, effect: subBarsize },                // 확률 20%: 패들 축소
                 { weight: 0, effect: addBarsize },                // 확률 20%: 패들 확대
                 { weight: 0, effect: () => { dx = dx > 0 ? dx + 1 : dx - 1; dy = dy > 0 ? dy + 1 : dy - 1; } }, // 확률 10%: 속도 증가
-                { weight: 30, effect: () => spawnBomb(brickX + brickWidth / 2, brickY + brickHeight / 2) }, // 확률 20%: 폭탄 드랍
-                { weight: 70, effect: () => {} }                   // 확률 20%: 효과 없음
+                { weight: 70, effect: spawnRandomBrick },          // 랜덤 위치에 블록 생성 (원하는 확률로 weight 수정)
+                { weight: 0, effect: () => spawnBomb(brickX + brickWidth / 2, brickY + brickHeight / 2) }, // 확률 30%: 폭탄 드랍
+                { weight: 30, effect: () => {} }                   // 확률 70%: 효과 없음
             ];
 
             // 확률(가중치)을 기반으로 랜덤 효과 선택
