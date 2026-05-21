@@ -26,11 +26,17 @@ const brickOffsetTop = 30;
 const brickOffsetLeft = 35;
 
 let bricks = [];
-let currentStage = 4;    // 현재 진행 중인 스테이지 번호
+let currentStage = 1;    // 현재 진행 중인 스테이지 번호
 let brokenBricksCount = 0; // 부순 벽돌 개수
 let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
 let bombs = [];          // 폭탄들을 저장할 배열
 
+const statusMap = { //status 별로 할당 //(다른 것도 추가가능) //전역변수로 변경
+    "T": { color: "#48dd57", effectFunc: tfHit},
+    "F": { color: "#d74e1d", effectFunc: tfHit},
+    "ADD": { color: "#8e8e8e", effectFunc: andHit},
+    "OR": {color: "#444444", effectFunc: orHit}
+};
 
 // 이벤트 리스너 추가
 document.addEventListener("mousemove", mouseMoveHandler, false);
@@ -111,13 +117,16 @@ class Brick {
             //status 0:깨진블록 1:일반블록 T:true블록 F:false블록
             status: 1,
             effectFunc: ()=>{},
-            color: "#787878"
+            color: "#787878",
+            text: "" //텍스트 추가(블럭위에 써질것)
         };
 
         Object.assign(this, baseSettings, option);
     }
 
-    onHit() { //블록 쳤을때 기능 함수 실행
+    onHit() { //블록 쳤을때 기능 함수 실행 //status 맵 활용 추가
+        const currentFunc = statusMap[this.status] || {effectFunc: this.effectFunc};
+        this.effectFunc = currentFunc.effectFunc;
         this.effectFunc();
         if(this.status===1){
             this.status = 0;
@@ -127,10 +136,6 @@ class Brick {
 
     draw(ctx) {
         if (this.status !== 0) {
-            const statusMap = { //status 별로 할당 //(다른 것도 추가가능)
-                "T": { color: "#48dd57"},
-                "F": { color: "#d74e1d"}
-            };
             //statusMap에 없으면 baseSetting color로
             const currentStyle = statusMap[this.status] || { color: this.color };
             ctx.beginPath();
@@ -138,6 +143,17 @@ class Brick {
             ctx.fillStyle = currentStyle.color; //currentStyle로 변경
             ctx.fill();
             ctx.closePath();
+
+            if(typeof this.status === "string") this.text = this.status;           
+            if (this.text !== "") { //블럭위에 글씨 추가
+                ctx.fillStyle = "#FFFFFF";
+                ctx.font = "bold 14px 'Galmuri11', sans-serif"; // css에 정의된 픽셀 폰트 적용
+                ctx.textAlign = "center";   
+                ctx.textBaseline = "middle";
+
+                // 블록의 정중앙 좌표를 계산하여 텍스트 쓰기
+                ctx.fillText(this.text, this.x + brickWidth / 2, this.y + brickHeight / 2);
+            }
         }
     }
 }
@@ -211,17 +227,18 @@ function loadTutorialStage(){
     }
 }
 
-function loadDiscreteStage(){
 
-}
 //===================================================
-
 // 게임 초기화 및 재시작 함수
 function initGame() {
     x = canvas.width / 2;
     y = canvas.height - 30;
-    dx = 3;
-    dy = -3;
+    const speed = 5; //속도지정
+    const startAngle = Math.PI / 4;  //처음 발사될때의 각도 지정
+    // 속도와 각도로 dx, dy를 계산
+    dx = speed * Math.sin(startAngle);
+    dy = -speed * Math.cos(startAngle);
+
     paddleX = (canvas.width - paddleWidth) / 2;
     brokenBricksCount = 0;
     isGameOver = false;
@@ -336,7 +353,7 @@ function drawBombs() {
 
 
 //=== update 함수들 ===
-function updateBall(){ //함수화
+function updateBall(){
     // 좌우 벽면 충돌
     if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
         dx = -dx;
@@ -346,16 +363,30 @@ function updateBall(){ //함수화
     if(y + dy < ballRadius) {
         dy = -dy;
     } 
-    // 하단 충돌 확인
-    else if(y + dy > canvas.height - ballRadius) {
+    // 패들 충돌 확인
+    else if(y + dy > canvas.height - ballRadius - paddleHeight) {
         if(x > paddleX && x < paddleX + paddleWidth) {
-            dy = -dy;
-        } else {
-            endGame("바닥에 닿았습니다. 게임 오버!");
-            return; // 그리기 루프 즉시 중단
+            
+            // 현재 공의 전체 속력(스칼라값)을 피타고라스 정리로 구합니다. (항상 일정함)
+            let speed = Math.sqrt(dx * dx + dy * dy);
+            
+            //공이 맞은 위치를 -1.0(왼쪽 끝) ~ 1.0(오른쪽 끝) 사이의 비율로 변환합니다.
+            let hitPoint = x - (paddleX + paddleWidth / 2);
+            let normalizedHit = hitPoint / (paddleWidth / 2);
+            
+            //튕겨나갈 각도 계산 (최대 60도 = Math.PI / 3)
+            let bounceAngle = normalizedHit * (Math.PI / 3); 
+            
+            // 동일한 속력을 유지하면서 dx, dy 지정
+            dx = speed * Math.sin(bounceAngle);
+            dy = -speed * Math.cos(bounceAngle); // 무조건 위로 튕겨야 하므로 y방향은 음수로
         }
     }
-
+    // 바닥에 닿았을 때 게임 오버
+    if(y + dy > canvas.height - ballRadius) {
+        endGame("바닥에 닿았습니다. 게임 오버!");
+        return;
+    }
     x += dx;
     y += dy;
 }
@@ -402,7 +433,76 @@ function draw() {
 initGame();
 
 //==== 이산수학 스테이지 기능 구현중 ====
+function tfHit(){
+    if(this.status === "T") this.status = "F";
+    else if(this.status === "F") this.status = "T";
+}
+function andHit(){
+    let leftBrick = null;
+    let rightBrick = null;
+    const distance = brickWidth + brickPadding;
+    //양 옆 블록 찾기
+    for (let i = 0; i < bricks.length; i++) {
+        let b = bricks[i];
+        if (b.y === this.y) {
+            if (b.x === this.x - distance) leftBrick = b;
+            if (b.x === this.x + distance) rightBrick = b;
+        }
+    }
+    // 양옆이 모두 T 블록이면 블록 파괴
+    if (leftBrick && rightBrick) { //leftBrick과 rightBrick이 존재하는지 체크
+        if (leftBrick.status === "T" && rightBrick.status === "T") {
+            this.status = 0;
+            leftBrick.status = 0;
+            rightBrick.status = 0;
+            brokenBricksCount += 3;
+        }
+    }
+}
+function orHit(){
+    let leftBrick = null;
+    let rightBrick = null;
+    const distance = brickWidth + brickPadding;
+    //양 옆 블록 찾기
+    for (let i = 0; i < bricks.length; i++) {
+        let b = bricks[i];
+        if (b.y === this.y) {
+            if (b.x === this.x - distance) leftBrick = b;
+            if (b.x === this.x + distance) rightBrick = b;
+        }
+    }
+    // 양옆이 모두 F 블록이 아닐때 블록 파괴
+    if (leftBrick && rightBrick) { //leftBrick과 rightBrick이 존재하는지 체크
+        if (!(leftBrick.status === "F" && rightBrick.status === "F")) {
+            this.status = 0;
+            leftBrick.status = 0;
+            rightBrick.status = 0;
+            brokenBricksCount += 3;
+        }
+    }
+}
+function loadDiscreteStage(){
+    const discreteMap = [
+        [1,1,1,1,1,1],
+        [1,1,1,1,1,1],
+        ["F","ADD","F","F","OR","F"]
+    ]
+    const brickRowCount = discreteMap.length;
+    const brickColumnCount = discreteMap[0].length;
 
+    for (let r = 0; r < brickRowCount; r++) {
+        for (let c = 0; c < brickColumnCount; c++) {
+            let blockStatus = discreteMap[r][c];
+            if (blockStatus === 0 || blockStatus === null || blockStatus === "") {
+                continue; 
+            }
+            let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
+            let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
+            bricks.push(new Brick(brickX,brickY,{status: blockStatus}))
+            totalBricks++;
+        }
+    }
+}
 //====================================
 
 function loadDSStage4() {
