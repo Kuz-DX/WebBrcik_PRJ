@@ -51,6 +51,13 @@ function mouseMoveHandler(e) {
         if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
     }
 }
+window.addEventListener("keydown", (e) => {
+    if (e.key === 'k') {
+        currentStage++;
+        endGame("모든 벽돌 제거 승리!");
+        loadStage(currentStage);
+    }
+  });
 
 function clickBombHandler(e) { //폭탄 클릭 핸들러
     const relativeX = e.clientX - canvas.getBoundingClientRect().left;
