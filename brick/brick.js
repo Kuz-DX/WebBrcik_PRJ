@@ -13,7 +13,7 @@ let isGameOver = false;
 let ballOpacity = 1.0; // 공의 투명도
 let opacityTimeoutId = null; // 투명도 복구 타이머 ID 15~16줄
 
-const ballRadius = 8;
+const ballRadius = 12;
 const paddleHeight = 10;
 let paddleWidth = 100;
 let targetPaddleWidth = 100;
@@ -158,12 +158,13 @@ class Brick {
     }
 }
 
-// === 1x1 일반 블록 사이즈에 맞춘 Boss 코어 클래스 ===
+// === 거대 단일 개체로 재탄생한 Boss 코어 클래스 ===
 class BossBrick extends Brick {
     constructor(x, y, option = {}) {
         super(x, y, option); 
-        this.maxHp = option.hp || 15; // 체력은 15 유지
+        this.maxHp = option.hp || 15; // 크기가 커진 만큼 체력을 15로 상향!
         this.hp = this.maxHp;         
+        // 보스만의 고유 크기 캡슐화
         this.width = option.width || brickWidth;
         this.height = option.height || brickHeight;
     }
@@ -185,28 +186,28 @@ class BossBrick extends Brick {
     draw(ctx) {
         if (this.status === 0) return;
 
-        // 1. 블록 렌더링
+        // 1. 거대한 고유 사이즈로 블록 렌더링
         ctx.beginPath();
         ctx.rect(this.x, this.y, this.width, this.height);
         ctx.fillStyle = this.color;
         ctx.fill();
         ctx.closePath();
 
-        // 2. 잠금 텍스트 중앙 렌더링 (1x1 크기에 맞게 14px로 복구)
+        // 2. 잠금 텍스트 중앙 렌더링 (폰트 크기도 거대하게!)
         if (typeof this.status === "string") {
             ctx.fillStyle = "#FFFFFF";
-            ctx.font = "bold 14px 'Galmuri11', sans-serif"; 
+            ctx.font = "bold 24px 'Galmuri11', sans-serif"; 
             ctx.textAlign = "center";   
             ctx.textBaseline = "middle";
             ctx.fillText(this.status, this.x + this.width / 2, this.y + this.height / 2);
         }
 
-        // 3. 체력바 렌더링 (1x1 크기 상단에 얇게 배치)
+        // 3. 거대한 체력바 렌더링
         if (this.status === 1 && this.hp > 0) {
-            const barWidth = this.width - 10; 
-            const barHeight = 4;              
-            const barX = this.x + 5;
-            const barY = this.y + 3;
+            const barWidth = this.width - 20; // 맵 크기에 맞게 체력바 가로 확장
+            const barHeight = 8;              // 체력바 두께 확장
+            const barX = this.x + 10;
+            const barY = this.y + 10;
 
             ctx.fillStyle = "#FF0000";
             ctx.fillRect(barX, barY, barWidth, barHeight);
@@ -216,7 +217,7 @@ class BossBrick extends Brick {
             ctx.fillRect(barX, barY, currentWidth, barHeight);
 
             ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             ctx.strokeRect(barX, barY, barWidth, barHeight);
         }
     }
@@ -300,7 +301,7 @@ function loadTutorialStage(){
 function initGame() {
     x = canvas.width / 2;
     y = canvas.height - 30;
-    const speed = 4; //속도지정
+    const speed = 5; //속도지정
     const startAngle = Math.random()*Math.PI / 4;  //처음 발사될때의 각도 지정
     // 속도와 각도로 dx, dy를 계산
     dx = speed * Math.sin(startAngle);
@@ -315,7 +316,7 @@ function initGame() {
         opacityTimeoutId = null;
     }
     // 스테이지 불러오기
-    loadStage(currentStage);
+    loadStage(2);
 
     // UI 숨기고 그리기 시작
     gameOverScreen.style.display = "none";
@@ -462,15 +463,8 @@ function drawBombs() {
 }
 
 
-// === 무결점 업데이트: 무한 수평 갇힘 방지 및 패들 히트박스 유지 ===
+// === 무결점 업데이트: 패들 히트박스 확장 및 가장자리 튕김 보정 ===
 function updateBall(){
-    // [핵심 패치] 수직 속도(dy)가 너무 낮아져서 무한 대기하는 현상 원천 차단
-    const minDy = 1.0; // 최소 수직 속도 하한선 (필요시 1.5 등으로 조절 가능)
-    if (Math.abs(dy) < minDy) {
-        // 기존 이동 방향(위/아래)은 유지하되, 속도만 최소치로 끌어올림
-        dy = (dy >= 0) ? minDy : -minDy;
-    }
-
     // 1. 좌우 벽면 충돌
     if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
         dx = -dx;
@@ -480,16 +474,20 @@ function updateBall(){
     if(y + dy < ballRadius) {
         dy = -dy;
     } 
-    // 3. 패들 충돌 확인 (이전에 패치한 확장 히트박스 유지)
+    // 3. 패들 충돌 확인 (히트박스 확장)
     else if(y + dy > canvas.height - ballRadius - paddleHeight) {
+        // [수정됨] 공의 중심(x)이 아니라, 테두리(ballRadius)가 닿았을 때도 충돌로 인정합니다.
         if(x > paddleX - ballRadius && x < paddleX + paddleWidth + ballRadius) {
             
             let speed = Math.sqrt(dx * dx + dy * dy);
+            
             let hitPoint = x - (paddleX + paddleWidth / 2);
+            // [수정됨] 확장된 히트박스 비율에 맞춰 정규화 분모도 넓혀줍니다.
             let normalizedHit = hitPoint / ((paddleWidth / 2) + ballRadius);
             
-            // 반사각 정규화 안전장치
+            // 안전장치: 비율이 -1 ~ 1을 초과하지 않도록 제한 (공이 맵 밖으로 튕기는 것 방지)
             normalizedHit = Math.max(-1, Math.min(1, normalizedHit));
+            
             let bounceAngle = normalizedHit * (Math.PI / 3); 
             
             dx = speed * Math.sin(bounceAngle);
@@ -506,6 +504,7 @@ function updateBall(){
     x += dx;
     y += dy;
 }
+
 function updatePaddle(){ //함수화
     let previousWidth = paddleWidth; 
     paddleWidth += (targetPaddleWidth - paddleWidth) * 0.016; 
@@ -650,69 +649,27 @@ function resizeGame(newWidth, newHeight) {
     y = newHeight - 30;
 }
 
-// === 무결점 디버그 시스템: Z(보스 직행) & K(스테이지 스킵) 이벤트 ===
-document.addEventListener("keydown", cheatKeyHandler, false);
 
-function cheatKeyHandler(e) {
-    // Z 키: 겉껍질 강제 파괴 및 보스 캡슐화 해제
-    if (e.key === 'z' || e.key === 'Z') {
-        let destroyedByCheat = 0;
-
-        for (let i = 0; i < bricks.length; i++) {
-            let b = bricks[i];
-            
-            if (!(b instanceof BossBrick) && b.status !== 0) {
-                b.status = 0; 
-                destroyedByCheat++;
-            }
-            
-            if (b instanceof BossBrick && b.status === "LOCK") {
-                b.status = 1;         
-                b.color = "#E74C3C";  
-            }
-        }
-        brokenBricksCount += destroyedByCheat;
-    }
-
-    // K 키: 현재 스테이지 강제 클리어 및 다음 스테이지 즉시 이동
-    if (e.key === 'k' || e.key === 'K') {
-        currentStage++; // 다음 스테이지 번호로 갱신
-        loadStage(currentStage); // 갱신된 스테이지 맵 즉시 로드
-
-        // [방어적 프로그래밍] 스킵 직후 불상사(즉사 버그)를 막기 위한 좌표 초기화
-        let currentCanvasWidth = canvas.width;
-        let currentCanvasHeight = canvas.height;
-
-        paddleX = (currentCanvasWidth - paddleWidth) / 2; // 패들 중앙 복귀
-        x = currentCanvasWidth / 2;                       // 공 위치 중앙 복귀
-        y = currentCanvasHeight - 30;                     // 공 위치 패들 바로 위로 복귀
-        
-        // 공이 바닥으로 내리꽂히지 않도록 무조건 위를 향해 발사되도록 방향(dy) 강제 반전
-        if (dy > 0) dy = -dy; 
-    }
-}
-// ==========================================
-// 중간보스: 객체지향 프로그래밍 스테이지 (7x7 정중앙 1x1 보스 맵)
-// ==========================================
 function loadOopStage() {
-    // 1. 보스전 전용 캔버스 확장 (800x600)
+
     if (typeof resizeGame === 'function') {
-        resizeGame(800, 600);
+        resizeGame(1000, 600);
     }
 
-    // 2. 7x7 동적 캡슐화 맵 생성 (1x1 중앙 정렬 최적화)
-    const rows = 7;
-    const cols = 7;
+    const rows = 8;
+    const cols = 8;
     const oopMap = [];
 
-    // 수학적 거리를 이용한 계층 구조 자동 계산 루프
+    // 수학적 거리를 이용한 계층 구조(양파 껍질) 자동 계산 루프
     for (let r = 0; r < rows; r++) {
         let rowArray = [];
         for (let c = 0; c < cols; c++) {
-            // 7x7 배열에서 가장자리로부터의 최대 거리는 3 (r=3, c=3 위치)
+            // 상, 하, 좌, 우 가장자리로부터 가장 가까운 거리를 계산
+            // 예: 가장자리는 0, 그다음 안쪽은 1, 최심부는 3
             let distFromEdge = Math.min(r, c, rows - 1 - r, cols - 1 - c);
             
-            // 4 - 3 = 1 (정중앙 1x1 보스) / 4 - 0 = 4 (최외곽 시스템)
+            // 시스템(4)이 최외곽(dist 0)이 되도록 역산
+            // 4 - 0 = 4(시스템), 4 - 3 = 1(코어 보스)
             let layerType = 4 - distFromEdge; 
             
             rowArray.push(layerType);
@@ -720,11 +677,12 @@ function loadOopStage() {
         oopMap.push(rowArray);
     }
 
-    // 3. 화면 중앙 정렬을 위한 계산 (7열 기준 자동 정렬)
+    // 3. 화면 정중앙 배치를 위한 동적 좌표 계산
     const totalBlockWidth = cols * (brickWidth + brickPadding) - brickPadding;
     const startX = (canvas.width - totalBlockWidth) / 2;
     const startY = 70;
 
+    // 4. 계층별 고유 색상 정의
     const layerColors = {
         1: "#E74C3C", // Core (Red)
         2: "#F39C12", // Class (Orange)
@@ -732,10 +690,13 @@ function loadOopStage() {
         4: "#3498DB"  // System (Blue)
     };
 
-    // 4. 블록 객체 생성 및 캡슐화 로직 주입
+    
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            let layerType = oopMap[r][c];
+            // 수학적 거리 계산
+            let distFromEdge = Math.min(r, c, rows - 1 - r, cols - 1 - c);
+            let layerType = 4 - distFromEdge; 
+            
             let brickX = startX + c * (brickWidth + brickPadding);
             let brickY = startY + r * (brickHeight + brickPadding);
 
@@ -755,14 +716,11 @@ function loadOopStage() {
                     initialStatus=1;
                     break;
             }
-
-
             let initialColor = (layerType === 4) ? layerColors[layerType] : "#555555"; 
 
             let effect = () => {
                 if (layerType > 1) {
                     let remainingBlocks = bricks.filter(b => b.layer === layerType && b.status === 1).length;
-                    
                     if (remainingBlocks === 1) {
                         bricks.forEach(b => {
                             if (b.layer === layerType - 1) {
@@ -772,31 +730,41 @@ function loadOopStage() {
                         });
                     }
                 } else if (layerType === 1) {
-                    spawnBomb(brickX + brickWidth / 2, brickY + brickHeight / 2);
+                    spawnBomb(brickX + (brickWidth * 2 + brickPadding) / 2, brickY + (brickHeight * 2 + brickPadding) / 2);
                 }
             };
 
-            // 1x1 크기의 중앙 코어 블록 생성
+            // === 거대 단일 보스 생성 로직 ===
             if (layerType === 1) {
-                bricks.push(new BossBrick(brickX, brickY, {
-                    status: initialStatus,
-                    color: initialColor,
-                    layer: layerType,
-                    effectFunc: effect,
-                    hp: 15 // 체력 15 유지
-                }));
+                // 코어 영역(r이 3~4, c가 3~4) 중 맨 왼쪽 위(r=3, c=3)에서 단 한 번만 생성
+                if (r === 3 && c === 3) {
+                    bricks.push(new BossBrick(brickX, brickY, {
+                        status: initialStatus,
+                        color: initialColor,
+                        layer: layerType,
+                        effectFunc: effect,
+                        hp: 15,
+                        // 2x2 크기로 병합 (너비 2개 + 사이 간격)
+                        width: brickWidth * 2 + brickPadding,
+                        height: brickHeight * 2 + brickPadding
+                    }));
+                    totalBricks++;
+                }
+                // (r=3,c=4), (r=4,c=3), (r=4,c=4) 위치는 빈 공간으로 남겨두기 위해 무시(continue)
             } else {
+                // 일반 블록 생성
                 bricks.push(new Brick(brickX, brickY, {
                     status: initialStatus,
                     color: initialColor,
                     layer: layerType, 
                     effectFunc: effect
                 }));
+                totalBricks++;
             }
-            totalBricks++;
         }
     }
 }
+
 
 
 
