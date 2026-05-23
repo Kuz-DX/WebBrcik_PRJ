@@ -9,6 +9,8 @@ const stageSelectBtn = document.getElementById("stageSelectBtn");
 const stageSelectModal = document.getElementById("stageSelectModal");
 const closeStageBtn = document.getElementById("closeStageBtn");
 const stageItemBtns = document.querySelectorAll(".stage-item-btn");
+const nextBtn = document.getElementById("nextBtn");
+
 
 // 게임 상태 변수 선언
 let x, y, dx, dy, paddleX;
@@ -82,6 +84,8 @@ window.addEventListener("keydown", (e) => {
         currentStage++;
         endGame("모든 벽돌 제거 승리!");
         loadStage(currentStage);
+        nextBtn.style.display = "inline";
+
     }
   });
 
@@ -135,6 +139,7 @@ class Bomb { //폭탄배열
         // 바닥에 닿으면 게임 오버
         if (this.y + this.radius > canvas.height) {
             endGame("폭탄이 바닥에 떨어졌습니다. 게임 오버!");
+            nextBtn.style.display = "none";
             this.isActive = false;
         }
     }
@@ -225,6 +230,7 @@ function loadStage(stageIndex){
             break;
         default:
             endGame("모든 스테이지를 클리어했습니다! 최종 승리!");
+            nextBtn.style.display = "none";
             break;
     }
 }
@@ -347,6 +353,7 @@ function collisionDetection() {
                     currentStage++;
                     if (currentStage > maxStage) maxStage = currentStage;
                     endGame("모든 벽돌 제거 승리!");
+                    nextBtn.style.display = "inline";
                     loadStage(currentStage);
                 }
             }
@@ -423,6 +430,7 @@ function updateBall(){
     // 바닥에 닿았을 때 게임 오버
     if(y + dy > canvas.height - ballRadius) {
         endGame("바닥에 닿았습니다. 게임 오버!");
+        nextBtn.style.display = "none";
         return;
     }
     x += dx;
