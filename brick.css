@@ -144,7 +144,7 @@ body {
   width: 100%;
   height: 100%;
   background: rgba(20, 24, 30, 0.95); 
-  display: flex;
+  display: none; /*flex*/
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -204,6 +204,7 @@ body {
   transform: translateX(-4px); /* 왼쪽으로 아주 살짝 밀리는 효과 */
 }
 
+
 /* 모달창 스타일 (대화창 감성 통일) */
 .modal-overlay {
   position: absolute;
@@ -247,6 +248,7 @@ body {
 .modal-content b {
   color: #f1c40f; 
 }
+
 
 /* 닫기 버튼 */
 .close-btn {

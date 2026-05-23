@@ -6,22 +6,33 @@
     <link rel="stylesheet" href="brick.css">
 </head>
 <body>
-
-<div id="stageSelectModal" class="modal-overlay" style="display: none;">
-    <div class="modal-content select-modal">
-      <h2>스테이지 선택</h2>
-      <div class="stage-list">
-        <button class="stage-item-btn" value="0">Stage 1: 튜토리얼</button>
-        <button class="stage-item-btn" value="1">Stage 2: 이산수학 </button>
-        <button class="stage-item-btn" value="2">Stage 3: 객체지향프로그래밍</button>
-        <button class="stage-item-btn" value="4">Stage 4: 자료구조</button>
-        <button class="stage-item-btn" value="5">Stage 5: 웹프로그래밍</button>
-      </div>
-      <button id="closeStageBtn" class="close-btn">닫기</button>
-    </div>
-</div>
-
+    
     <div id="gameContainer">
+        <div id="mainScreen" class="screen-overlay">
+        <div class="title-container">
+            <h1 class="game-title">5월의 어느날</h1>
+            <p class="game-subtitle">집에 가고 싶어요</p>
+        </div>
+        <div class="menu-container-br">
+            <button id="startNewGameBtn" class="menu-btn">시작</button>
+            <button id="optionBtn" class="menu-btn">옵션</button>
+        </div>
+        </div> 
+        <div id="stageSelectModal" class="modal-overlay" style="display: none;">
+            <div class="modal-content select-modal">
+            <h2>스테이지 선택</h2>
+            <div class="stage-list">
+                <button class="stage-item-btn" value="0">Stage 1: 튜토리얼</button>
+                <button class="stage-item-btn" value="1">Stage 2: 이산수학 </button>
+                <button class="stage-item-btn" value="2">Stage 3: 객체지향프로그래밍</button>
+                <button class="stage-item-btn" value="4">Stage 4: 자료구조</button>
+                <button class="stage-item-btn" value="5">Stage 5: 웹프로그래밍</button>
+            </div>
+                <button id="closeStageBtn" class="close-btn">닫기</button>
+            </div>
+        </div>
+    
+
         <canvas id="gameCanvas" width="600" height="400"></canvas>
         <!-- 대화창 (필요할 때만 노출) -->
         <div id="quest-box" class="dialogue-box">
