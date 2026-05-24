@@ -5,10 +5,18 @@ const ctx = canvas.getContext("2d");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const restartBtn = document.getElementById("restartBtn");
+const stageSelectBtn = document.getElementById("stageSelectBtn");
+const stageSelectModal = document.getElementById("stageSelectModal");
+const closeStageBtn = document.getElementById("closeStageBtn");
+const stageItemBtns = document.querySelectorAll(".stage-item-btn");
+const nextBtn = document.getElementById("nextBtn");
+
+
 
 // 게임 상태 변수 선언
 let x, y, dx, dy, paddleX;
-let isGameOver = false;
+let isGameOver = true;
+let isGameStarted = false;
 
 let ballOpacity = 1.0; // 공의 투명도
 let opacityTimeoutId = null; // 투명도 복구 타이머 ID 15~16줄
@@ -26,22 +34,51 @@ const brickOffsetTop = 30;
 const brickOffsetLeft = 35;
 
 let bricks = [];
-let currentStage = 1;    // 현재 진행 중인 스테이지 번호
+let currentStage = 0;    // 현재 진행 중인 스테이지 번호
+let maxStage = 0;
+let clearCount = 0; //이산수학 미니 스테이지 클리어 수
 let brokenBricksCount = 0; // 부순 벽돌 개수
 let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
 let bombs = [];          // 폭탄들을 저장할 배열
 
-const statusMap = { //status 별로 할당 //(다른 것도 추가가능) //전역변수로 변경
-    "T": { color: "#48dd57", effectFunc: tfHit},
-    "F": { color: "#d74e1d", effectFunc: tfHit},
-    "ADD": { color: "#8e8e8e", effectFunc: andHit},
-    "OR": {color: "#444444", effectFunc: orHit}
+const statusMap = { 
+    "T":    { color: "#48dd57", effectFunc: tfHit },
+    "F":    { color: "#d74e1d", effectFunc: tfHit },
+    "NOT":  { color: "#555555", effectFunc: notHit },
+
+    // 논리 게이트 색상, 실행할 함수, 실제 연산식 한번에 정의
+    "AND":  { color: "#8e8e8e", effectFunc: gateHit, operation: (a, b) => a && b },
+    "OR":   { color: "#444444", effectFunc: gateHit, operation: (a, b) => a || b },    
+    "XOR":  { color: "#555555", effectFunc: gateHit, operation: (a, b) => a !== b },
+    "NAND": { color: "#555555", effectFunc: gateHit, operation: (a, b) => !(a && b) },
+    "NOR":  { color: "#555555", effectFunc: gateHit, operation: (a, b) => !(a || b) },
+    "XNOR": { color: "#555555", effectFunc: gateHit, operation: (a, b) => a === b }
 };
 
 // 이벤트 리스너 추가
 document.addEventListener("mousemove", mouseMoveHandler, false);
 restartBtn.addEventListener("click", initGame); // 다시 시작 버튼 클릭 시 게임 초기화
 canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
+startNewGameBtn.addEventListener("click", () => { //게임 시작 이벤트
+      mainScreen.style.display = "none"; 
+      currentStage = 0; 
+      stageSelectModal.style.display = "flex";
+});
+stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
+      btn.addEventListener("click", (e) => {
+          // 데이터 속성(data-stage)에서 스테이지 인덱스 추출
+          let selectedStage = parseInt(e.target.getAttribute("data-stage"));
+          if (selectedStage == 3 || selectedStage == 4) selectedStage++;
+          // 메인 화면 및 모달 닫기
+          stageSelectModal.style.display = "none";
+          mainScreen.style.display = "none";
+          
+          // 해당 스테이지로 전역 변수 변경 후 게임 초기화 구동
+          currentStage = selectedStage;
+          initGame();
+      });
+  });
+
 
 
 function mouseMoveHandler(e) {
@@ -52,6 +89,17 @@ function mouseMoveHandler(e) {
         if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
     }
 }
+
+window.addEventListener("keydown", (e) => {
+    if (e.key === 'k') {
+        currentStage++;
+        endGame("모든 벽돌 제거 승리!");
+        loadStage(currentStage);
+        nextBtn.style.display = "inline";
+
+    }
+  });
+
 
 function clickBombHandler(e) { //폭탄 클릭 핸들러
     const relativeX = e.clientX - canvas.getBoundingClientRect().left;
@@ -99,20 +147,7 @@ function cheatKeyHandler(e) {
         brokenBricksCount += destroyedByCheat;
     }
 
-    // K 키: 현재 스테이지 강제 클리어 및 다음 스테이지 즉시 이동
-    if (e.key === 'k' || e.key === 'K') {
-        currentStage++; 
-        loadStage(currentStage); 
-
-        let currentCanvasWidth = canvas.width;
-        let currentCanvasHeight = canvas.height;
-
-        paddleX = (currentCanvasWidth - paddleWidth) / 2; 
-        x = currentCanvasWidth / 2;                       
-        y = currentCanvasHeight - 30;                     
-        
-        if (dy > 0) dy = -dy; 
-    }
+    
 }
 
 class Bomb { //폭탄배열
@@ -149,6 +184,7 @@ class Bomb { //폭탄배열
         // 바닥에 닿으면 게임 오버
         if (this.y + this.radius > canvas.height) {
             endGame("폭탄이 바닥에 떨어졌습니다. 게임 오버!");
+            nextBtn.style.display = "none";
             this.isActive = false;
         }
     }
@@ -285,6 +321,10 @@ class BossBrick extends Brick {
 }
 //==== 스테이지들 ======
 //스테이지 별로 맵 로드
+function showStage() { //스테이지 선택 화면
+    stageSelectModal.style.display = "flex";
+    gameOverScreen.style.display = "none";
+}
 function loadStage(stageIndex){
     //화면, 카운트 초기화
     bricks = [];
@@ -314,6 +354,7 @@ function loadStage(stageIndex){
             break;
         default:
             endGame("모든 스테이지를 클리어했습니다! 최종 승리!");
+            nextBtn.style.display = "none";
             break;
     }
 }
@@ -377,7 +418,7 @@ function initGame() {
         opacityTimeoutId = null;
     }
     // 스테이지 불러오기
-    loadStage(2);
+    loadStage(currentStage);
 
     // UI 숨기고 그리기 시작
     gameOverScreen.style.display = "none";
@@ -504,8 +545,23 @@ function collisionDetection() {
 
                 // 클리어 조건 검사
                 if(brokenBricksCount >= totalBricks) {
+                    
+                    if (currentStage === 1) {//이산수학 미니 스테이지
+                        const targetGateCount = 3; //미니 스테이지 수
+                        clearCount++;
+                        
+                        if (clearCount < targetGateCount) {                           
+                            bricks = [];
+                            brokenBricksCount = 0;
+                            totalBricks = 0;
+                            loadDiscreteStage();
+                            return;
+                        }else clearCount = 0;
+                    }
                     currentStage++;
+                    if (currentStage > maxStage) maxStage = currentStage;
                     endGame("모든 벽돌 제거 승리!");
+                    nextBtn.style.display = "inline";
                     loadStage(currentStage);
                 }
             }
@@ -583,6 +639,7 @@ function updateBall(){
     // 4. 바닥에 닿았을 때 게임 오버
     if(y + dy > canvas.height - ballRadius) {
         endGame("바닥에 닿았습니다. 게임 오버!");
+        nextBtn.style.display = "none";
         return;
     }
     
@@ -628,9 +685,6 @@ function draw() {
     if (isGameOver) return; 
     requestAnimationFrame(draw);
 }
-
-// 스크립트가 로드되면 최초 게임 시작
-initGame();
 
 //==== 이산수학 스테이지 기능 구현중 ====
 function tfHit(){
@@ -693,19 +747,115 @@ function loadDiscreteStage(){
     ]
     const brickRowCount = discreteMap.length;
     const brickColumnCount = discreteMap[0].length;
+}
 
-    for (let r = 0; r < brickRowCount; r++) {
-        for (let c = 0; c < brickColumnCount; c++) {
-            let blockStatus = discreteMap[r][c];
-            if (blockStatus === 0 || blockStatus === null || blockStatus === "") {
-                continue; 
+
+function notHit(){
+    bricks.forEach(b => {
+        if(b.status === "T") b.status = "F";
+        else if(b.status === "F") b.status = "T";
+    });
+}
+
+function gateHit() {
+    let leftInput = null;
+    let rightInput = null;
+    let topOutput = null;
+
+    // 블록 간의 가로, 세로 간격 계산
+    const distanceX = brickWidth + brickPadding; 
+    const distanceY = brickHeight + brickPadding;
+
+    //Gate 블록 주변의 입출력 블록 탐색
+    for (let i = 0; i < bricks.length; i++) {
+        let b = bricks[i];
+        
+        // 위쪽 출력 블록 x 같고, y 한칸 위
+        if (b.x === this.x && b.y === this.y - distanceY) {
+            topOutput = b;
+        }
+        // 왼쪽 아래 입력 블록 x 한칸 왼쪽, y 한칸 아래
+        else if (b.x === this.x - distanceX && b.y === this.y + distanceY) {
+            leftInput = b;
+        }
+        // 오른쪽 아래 입력 블록 x 한칸 오른쪽, y 한칸 아래
+        else if (b.x === this.x + distanceX && b.y === this.y + distanceY) {
+            rightInput = b;
+        }
+    }
+
+    // 세 개의 블록이 모두 제자리에 존재하는지 확인
+    if (leftInput && rightInput && topOutput) {
+        
+        // T/F 문자를 boolean으로 변환
+        let leftVal = (leftInput.status === "T");
+        let rightVal = (rightInput.status === "T");
+        let topVal = (topOutput.status === "T");
+        
+        const currentGate = statusMap[this.status];
+
+        // 해당 블록에 operation 있는지 확인
+        if (currentGate && currentGate.operation) {
+            
+            // 꺼내온 operation을 이용해 계산 실행
+            let expectedResult = currentGate.operation(leftVal, rightVal);
+
+            // 결과가 topVal과 일치하면 전부 파괴
+            if (expectedResult === topVal) {
+                this.status = 0;
+                leftInput.status = 0;
+                rightInput.status = 0;
+                topOutput.status = 0;
+                
+                brokenBricksCount += 4;
             }
+        }
+    }
+}
+
+function randomDiscreteMap() { // 맵 랜덤생성
+    // 게이트만 배열로 추출
+    const Gates = Object.keys(statusMap).filter(key => statusMap[key].operation);
+
+    const randomGate = Gates[Math.floor(Math.random() * Gates.length)];
+
+    const leftVal = Math.random() < 0.5 ? "T" : "F";
+    const rightVal = Math.random() < 0.5 ? "T" : "F";
+
+    const leftBool = (leftVal === "T");
+    const rightBool = (rightVal === "T");
+    
+    // statusMap에서 연산식 꺼내서 계산
+    const resultBool = statusMap[randomGate].operation(leftBool, rightBool);
+    const topVal = resultBool ? "T" : "F";
+
+    return [
+        [1, 0, topVal, 0, 0, 1],
+        [1, 0, randomGate, 0, 0, 1, 1],
+        [1, leftVal, 0, rightVal, 1, "NOT",1]
+    ];
+}
+
+
+function loadDiscreteStage() {
+    const map = randomDiscreteMap();
+    const brickRowCount = map.length;
+    const brickColumnCount = map[0].length;
+
+    for (let r = 0; r < brickRowCount; r++) { //차후에 blockdraw 이용해서 변경예정
+        for (let c = 0; c < brickColumnCount; c++) {
+            let blockStatus = map[r][c];
+
+            if (blockStatus === 0 || blockStatus === null || blockStatus === "") continue;
+
             let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
             let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
-            bricks.push(new Brick(brickX,brickY,{status: blockStatus}))
+            
+            bricks.push(new Brick(brickX, brickY, { status: blockStatus }));
             totalBricks++;
         }
     }
+    totalBricks--;
 }
 
 
@@ -1021,3 +1171,9 @@ function loadDSStage4() {
         }
     }
 }
+
+
+
+
+//최초 실행
+initGame();
