@@ -13,7 +13,7 @@ let isGameOver = false;
 let ballOpacity = 1.0; // 공의 투명도
 let opacityTimeoutId = null; // 투명도 복구 타이머 ID 15~16줄
 
-const ballRadius = 8;
+const ballRadius = 12;
 const paddleHeight = 10;
 let paddleWidth = 100;
 let targetPaddleWidth = 100;
@@ -43,6 +43,7 @@ document.addEventListener("mousemove", mouseMoveHandler, false);
 restartBtn.addEventListener("click", initGame); // 다시 시작 버튼 클릭 시 게임 초기화
 canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
 
+
 function mouseMoveHandler(e) {
     const relativeX = e.clientX - canvas.getBoundingClientRect().left;
     if(relativeX > 0 && relativeX < canvas.width) {
@@ -65,6 +66,52 @@ function clickBombHandler(e) { //폭탄 클릭 핸들러
                 b.isActive = false; // 폭탄 해제 (클릭 시 사라짐)
             }
         }
+    }
+}
+
+
+
+
+// === 무결점 디버그 시스템: Z(보스 직행) & K(스테이지 스킵) 이벤트 (최적화 버전) ===
+document.addEventListener("keydown", cheatKeyHandler, false);
+
+function cheatKeyHandler(e) {
+    // Z 키: 겉껍질 강제 파괴 및 보스 캡슐화 해제
+    if (e.key === 'z' || e.key === 'Z') {
+        let destroyedByCheat = 0;
+
+        for (let i = 0; i < bricks.length; i++) {
+            let b = bricks[i];
+            
+            // 보스 블록이 아닌 모든 일반/방어 블록들을 즉시 파괴
+            if (b.realType !== "BOSS" && b.status !== 0) {
+                b.status = 0; 
+                destroyedByCheat++;
+            }
+            
+            // 보스 블록의 무적 잠금을 풀어줌
+            if (b.realType === "BOSS" && b.status === "LOCK") {
+                b.status = 1;         
+                b.color = "#8E44AD"; // 보스 고유 색상(보라색) 복구
+                b.text = "BOSS";
+            }
+        }
+        brokenBricksCount += destroyedByCheat;
+    }
+
+    // K 키: 현재 스테이지 강제 클리어 및 다음 스테이지 즉시 이동
+    if (e.key === 'k' || e.key === 'K') {
+        currentStage++; 
+        loadStage(currentStage); 
+
+        let currentCanvasWidth = canvas.width;
+        let currentCanvasHeight = canvas.height;
+
+        paddleX = (currentCanvasWidth - paddleWidth) / 2; 
+        x = currentCanvasWidth / 2;                       
+        y = currentCanvasHeight - 30;                     
+        
+        if (dy > 0) dy = -dy; 
     }
 }
 
@@ -158,26 +205,39 @@ class Brick {
     }
 }
 
-// === 1x1 일반 블록 사이즈에 맞춘 Boss 코어 클래스 ===
+
+
 class BossBrick extends Brick {
     constructor(x, y, option = {}) {
         super(x, y, option); 
-        this.maxHp = option.hp || 15; // 체력은 15 유지
+        this.maxHp = option.hp || 1; 
         this.hp = this.maxHp;         
         this.width = option.width || brickWidth;
         this.height = option.height || brickHeight;
+        this.isIndestructible = option.indestructible || false; 
+        
+        this.realText = option.realText || option.text || ""; 
+        this.realType = option.realType || ""; // 객체 타입 식별용 은닉 변수
+
+
+        // blockPool에는 type,text,color,hp,indestructible 속성들이 저장되어 있음. 그걸 ...으로 표시
+        // 그리고 layer라는 속성을 추가로 저장시킴
     }
 
     onHit() {
         if (this.status === "LOCK") return; 
+        if (this.isIndestructible) return; // private 블록 무적 방어
 
         if (this.status === 1) {
             this.hp--; 
-            this.effectFunc(); 
+            // hit 할 수 있는 상황이라면 
+            // 생명력이 감소
 
             if (this.hp <= 0) {
+                // 생명력이 0보다 작아지면 hit되므로 감소
                 this.status = 0;
                 brokenBricksCount++; 
+                this.effectFunc(); 
             }
         }
     }
@@ -185,24 +245,26 @@ class BossBrick extends Brick {
     draw(ctx) {
         if (this.status === 0) return;
 
-        // 1. 블록 렌더링
+        // 계층이 아직 열리지 않았으면 검정색으로
         ctx.beginPath();
         ctx.rect(this.x, this.y, this.width, this.height);
         ctx.fillStyle = this.color;
         ctx.fill();
         ctx.closePath();
+        // this.text로 블록을 표현함 
 
-        // 2. 잠금 텍스트 중앙 렌더링 (1x1 크기에 맞게 14px로 복구)
-        if (typeof this.status === "string") {
+        let displayText = this.text || ""; 
+        
+        if (displayText !== "") {
             ctx.fillStyle = "#FFFFFF";
-            ctx.font = "bold 14px 'Galmuri11', sans-serif"; 
+            ctx.font = "bold 12px 'Galmuri11', sans-serif"; 
             ctx.textAlign = "center";   
             ctx.textBaseline = "middle";
-            ctx.fillText(this.status, this.x + this.width / 2, this.y + this.height / 2);
+            ctx.fillText(displayText, this.x + this.width / 2, this.y + this.height / 2);
         }
 
-        // 3. 체력바 렌더링 (1x1 크기 상단에 얇게 배치)
-        if (this.status === 1 && this.hp > 0) {
+        // 3. 체력바는 오직 BOSS 타입에게만 허락
+        if (this.realType === "BOSS" && this.status === 1 && this.hp > 0) {
             const barWidth = this.width - 10; 
             const barHeight = 4;              
             const barX = this.x + 5;
@@ -300,7 +362,7 @@ function loadTutorialStage(){
 function initGame() {
     x = canvas.width / 2;
     y = canvas.height - 30;
-    const speed = 4; //속도지정
+    const speed = 5; //속도지정
     const startAngle = Math.random()*Math.PI / 4;  //처음 발사될때의 각도 지정
     // 속도와 각도로 dx, dy를 계산
     dx = speed * Math.sin(startAngle);
@@ -315,7 +377,7 @@ function initGame() {
         opacityTimeoutId = null;
     }
     // 스테이지 불러오기
-    loadStage(currentStage);
+    loadStage(2);
 
     // UI 숨기고 그리기 시작
     gameOverScreen.style.display = "none";
@@ -366,19 +428,19 @@ function endGame(message) {
 }
 
 // 충돌 감지 함수
-// === 무결점 물리 엔진 (1프레임 1충돌 및 끼임 방지 적용) ===
+// === 무결점 물리 엔진 (1프레임 1충돌, 끼임 방지 및 정밀한 모서리 반사 적용) ===
 function collisionDetection() {
-    let hasCollidedThisFrame = false; // 1프레임 1충돌을 보장하기 위한 플래그 (이중 파괴 방지)
+    let hasCollidedThisFrame = false; // 1프레임 1충돌을 보장하기 위한 플래그
 
     for(let i = 0; i < bricks.length; i++) {
-        if (hasCollidedThisFrame) break; // 이번 프레임에서 이미 충돌을 처리했다면 나머지 연산 중단
+        if (hasCollidedThisFrame) break; // 이번 프레임에서 이미 충돌을 처리했다면 연산 중단
 
         let b = bricks[i];
         if(b.status !== 0) { 
             let currentWidth = b.width || brickWidth;
             let currentHeight = b.height || brickHeight;
 
-            // 1. 블록의 사각형 영역 안에서 공의 중심(x, y)과 가장 가까운 지점 찾기
+            // 1. 블록의 사각형 영역 안에서 공의 중심(x, y)과 가장 가까운 지점(충돌점) 찾기
             let closestX = Math.max(b.x, Math.min(x, b.x + currentWidth));
             let closestY = Math.max(b.y, Math.min(y, b.y + currentHeight));
 
@@ -398,22 +460,46 @@ function collisionDetection() {
                 let hitTopOrBottom = (prevY <= b.y || prevY >= b.y + currentHeight);
                 let hitLeftOrRight = (prevX <= b.x || prevX >= b.x + currentWidth);
 
-                // 5. 직관적인 단순 반사 및 끼임 방지(위치 보정) 처리
+                // 5. 충돌 면에 따른 반사 처리
                 if (hitTopOrBottom && !hitLeftOrRight) {
-                    dy = -dy; // 고전 아케이드 방식의 상하 반전
-                    // 공을 블록 바깥으로 강제로 밀어내어 틈새 끼임 방지
+                    // 상하 평면 충돌
+                    dy = -dy; 
                     y = (prevY <= b.y) ? b.y - ballRadius : b.y + currentHeight + ballRadius;
                 } 
                 else if (hitLeftOrRight && !hitTopOrBottom) {
-                    dx = -dx; // 고전 아케이드 방식의 좌우 반전
+                    // 좌우 평면 충돌
+                    dx = -dx; 
                     x = (prevX <= b.x) ? b.x - ballRadius : b.x + currentWidth + ballRadius;
                 } 
                 else {
-                    // 완벽한 모서리 충돌 (동시에 양면 충돌)
-                    dx = -dx;
-                    dy = -dy;
+                    // ==========================================
+                    // 💡 [핵심 구현] 모서리 정밀 충돌 물리 엔진 적용
+                    // ==========================================
+                    let distance = Math.sqrt(distanceSquared);
+                    
+                    // 예외 처리: 공의 중심이 정확히 모서리와 겹친 경우 (단순 반전)
+                    if (distance === 0) {
+                        dx = -dx;
+                        dy = -dy;
+                    } else {
+                        // 1) 법선 벡터 정규화 (길이를 1로 만듦)
+                        let nx = distanceX / distance;
+                        let ny = distanceY / distance;
+
+                        // 2) 속도 벡터와 법선 벡터의 내적(Dot Product) 계산
+                        let dotProduct = (dx * nx) + (dy * ny);
+
+                        // 3) 반사 벡터 공식 (Reflection Vector) 적용
+                        dx = dx - 2 * dotProduct * nx;
+                        dy = dy - 2 * dotProduct * ny;
+                        
+                        // 4) 모서리 끼임(겹침) 방지를 위해 공을 충돌 지점 바깥으로 정확히 밀어냄
+                        x = closestX + nx * ballRadius;
+                        y = closestY + ny * ballRadius;
+                    }
                 }
 
+                // 블록 타격 효과 실행
                 b.onHit(); 
 
                 // 클리어 조건 검사
@@ -462,15 +548,8 @@ function drawBombs() {
 }
 
 
-// === 무결점 업데이트: 무한 수평 갇힘 방지 및 패들 히트박스 유지 ===
+// === 무결점 업데이트: 패들 히트박스 확장 및 가장자리 튕김 보정 ===
 function updateBall(){
-    // [핵심 패치] 수직 속도(dy)가 너무 낮아져서 무한 대기하는 현상 원천 차단
-    const minDy = 1.0; // 최소 수직 속도 하한선 (필요시 1.5 등으로 조절 가능)
-    if (Math.abs(dy) < minDy) {
-        // 기존 이동 방향(위/아래)은 유지하되, 속도만 최소치로 끌어올림
-        dy = (dy >= 0) ? minDy : -minDy;
-    }
-
     // 1. 좌우 벽면 충돌
     if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
         dx = -dx;
@@ -480,16 +559,20 @@ function updateBall(){
     if(y + dy < ballRadius) {
         dy = -dy;
     } 
-    // 3. 패들 충돌 확인 (이전에 패치한 확장 히트박스 유지)
+    // 3. 패들 충돌 확인 (히트박스 확장)
     else if(y + dy > canvas.height - ballRadius - paddleHeight) {
+        // [수정됨] 공의 중심(x)이 아니라, 테두리(ballRadius)가 닿았을 때도 충돌로 인정합니다.
         if(x > paddleX - ballRadius && x < paddleX + paddleWidth + ballRadius) {
             
             let speed = Math.sqrt(dx * dx + dy * dy);
+            
             let hitPoint = x - (paddleX + paddleWidth / 2);
+            // [수정됨] 확장된 히트박스 비율에 맞춰 정규화 분모도 넓혀줍니다.
             let normalizedHit = hitPoint / ((paddleWidth / 2) + ballRadius);
             
-            // 반사각 정규화 안전장치
+            // 안전장치: 비율이 -1 ~ 1을 초과하지 않도록 제한 (공이 맵 밖으로 튕기는 것 방지)
             normalizedHit = Math.max(-1, Math.min(1, normalizedHit));
+            
             let bounceAngle = normalizedHit * (Math.PI / 3); 
             
             dx = speed * Math.sin(bounceAngle);
@@ -506,11 +589,12 @@ function updateBall(){
     x += dx;
     y += dy;
 }
+
 function updatePaddle(){ //함수화
     let previousWidth = paddleWidth; 
     paddleWidth += (targetPaddleWidth - paddleWidth) * 0.016; 
    
-    paddleX -= (paddleWidth - previousWidth) / 2;
+    paddleX =paddleX- (paddleWidth - previousWidth) / 2;
 
     if (paddleX + paddleWidth > canvas.width) {
         paddleX = canvas.width - paddleWidth;
@@ -553,6 +637,8 @@ function tfHit(){
     if(this.status === "T") this.status = "F";
     else if(this.status === "F") this.status = "T";
 }
+
+
 function andHit(){
     let leftBrick = null;
     let rightBrick = null;
@@ -575,6 +661,8 @@ function andHit(){
         }
     }
 }
+
+
 function orHit(){
     let leftBrick = null;
     let rightBrick = null;
@@ -650,157 +738,246 @@ function resizeGame(newWidth, newHeight) {
     y = newHeight - 30;
 }
 
-// === 무결점 디버그 시스템: Z(보스 직행) & K(스테이지 스킵) 이벤트 ===
-document.addEventListener("keydown", cheatKeyHandler, false);
 
-function cheatKeyHandler(e) {
-    // Z 키: 겉껍질 강제 파괴 및 보스 캡슐화 해제
-    if (e.key === 'z' || e.key === 'Z') {
-        let destroyedByCheat = 0;
-
-        for (let i = 0; i < bricks.length; i++) {
-            let b = bricks[i];
-            
-            if (!(b instanceof BossBrick) && b.status !== 0) {
-                b.status = 0; 
-                destroyedByCheat++;
-            }
-            
-            if (b instanceof BossBrick && b.status === "LOCK") {
-                b.status = 1;         
-                b.color = "#E74C3C";  
-            }
-        }
-        brokenBricksCount += destroyedByCheat;
-    }
-
-    // K 키: 현재 스테이지 강제 클리어 및 다음 스테이지 즉시 이동
-    if (e.key === 'k' || e.key === 'K') {
-        currentStage++; // 다음 스테이지 번호로 갱신
-        loadStage(currentStage); // 갱신된 스테이지 맵 즉시 로드
-
-        // [방어적 프로그래밍] 스킵 직후 불상사(즉사 버그)를 막기 위한 좌표 초기화
-        let currentCanvasWidth = canvas.width;
-        let currentCanvasHeight = canvas.height;
-
-        paddleX = (currentCanvasWidth - paddleWidth) / 2; // 패들 중앙 복귀
-        x = currentCanvasWidth / 2;                       // 공 위치 중앙 복귀
-        y = currentCanvasHeight - 30;                     // 공 위치 패들 바로 위로 복귀
-        
-        // 공이 바닥으로 내리꽂히지 않도록 무조건 위를 향해 발사되도록 방향(dy) 강제 반전
-        if (dy > 0) dy = -dy; 
-    }
-}
 // ==========================================
 // 중간보스: 객체지향 프로그래밍 스테이지 (7x7 정중앙 1x1 보스 맵)
+// ========================================== 김기범
+// ==========================================
+// 중간보스: 객체지향 스테이지 (무적 private 및 Getter 통로 적용)
+// ==========================================
+// ==========================================
+// 중간보스: 객체지향 스테이지 (단일 계층 수평 캡슐화 및 연쇄 파괴)
+// ==========================================
+// ==========================================
+// 중간보스: 객체지향 스테이지 (체력 보스 독점 및 수평 캡슐화 연쇄 파괴)
+// ==========================================
+// ==========================================
+// 중간보스: 객체지향 스테이지 (다중 제어자 쌍 및 계층별 랜덤 배치)
+// ==========================================
+// ==========================================
+// 중간보스: 객체지향 스테이지 (블록 텍스트 예고 및 검정색 잠금 UI 적용)
+// ==========================================
+// ==========================================
+// 중간보스: 객체지향 스테이지 (완벽한 Getter-변수 연동 파괴 적용)
 // ==========================================
 function loadOopStage() {
-    // 1. 보스전 전용 캔버스 확장 (800x600)
     if (typeof resizeGame === 'function') {
         resizeGame(800, 600);
     }
 
-    // 2. 7x7 동적 캡슐화 맵 생성 (1x1 중앙 정렬 최적화)
     const rows = 7;
     const cols = 7;
-    const oopMap = [];
 
-    // 수학적 거리를 이용한 계층 구조 자동 계산 루프
+    const layerPositions = { 1: [], 2: [], 3: [], 4: [] };
+    //각각의 계층을 저장하는 변수
     for (let r = 0; r < rows; r++) {
-        let rowArray = [];
         for (let c = 0; c < cols; c++) {
-            // 7x7 배열에서 가장자리로부터의 최대 거리는 3 (r=3, c=3 위치)
             let distFromEdge = Math.min(r, c, rows - 1 - r, cols - 1 - c);
-            
-            // 4 - 3 = 1 (정중앙 1x1 보스) / 4 - 0 = 4 (최외곽 시스템)
             let layerType = 4 - distFromEdge; 
-            
-            rowArray.push(layerType);
+            layerPositions[layerType].push({ r: r, c: c });
         }
-        oopMap.push(rowArray);
     }
+    // 위치에 따라서 계층 정보를 설정해서 저장하기
 
-    // 3. 화면 중앙 정렬을 위한 계산 (7열 기준 자동 정렬)
     const totalBlockWidth = cols * (brickWidth + brickPadding) - brickPadding;
+    // 총 블록 넓이 
+
+    //그리기 시작할 X 좌표
     const startX = (canvas.width - totalBlockWidth) / 2;
+    
+    //그리기 시작할 y 좌표
     const startY = 70;
 
-    const layerColors = {
-        1: "#E74C3C", // Core (Red)
-        2: "#F39C12", // Class (Orange)
-        3: "#2ECC71", // Inheritance (Green)
-        4: "#3498DB"  // System (Blue)
-    };
+    const blockGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
+    //row만한 배열을 하나 형성한 후에 , 각각의 row에 대해서 cols 길이의 array를 만들고 null로 모두 채우기
 
-    // 4. 블록 객체 생성 및 캡슐화 로직 주입
+    // 색상 팔레트
+    const COLOR_PUBLIC    = "#3498DB"; // 파란색
+    const COLOR_PROTECTED = "#2ECC71"; // 초록색
+    const COLOR_PRIVATE   = "#E74C3C"; // 빨간색
+    const COLOR_NORMAL    = "#95A5A6"; // 회색
+
+    // 1. 계층별 독립적 블록 풀(Pool) 생성 및 무작위 셔플
+    for (let layer = 4; layer >= 2; layer--) {
+        const positions = layerPositions[layer];
+        const numBlocks = positions.length;
+        //numBlocks 각 계층에 들어갈 수 있는 블록의 수
+
+        let blockPool = [];
+
+        if (layer === 4) {
+            // [4계층] W,X,Y,Z 관련 필수 배치
+            blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_Y", text: "string Y", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_Z", text: "MyData Z", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            
+            blockPool.push({ type: "public_W", text: "int getW", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+            blockPool.push({ type: "public_X", text: "double getX", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+            blockPool.push({ type: "public_Y", text: "string getY", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+            blockPool.push({ type: "public_Z", text: "MyData getZ", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+
+            //4계층에 들어갈 필수내용 public과 private 블록들
+            // type은 private,protected,public 등이 들어가는 속성 
+            // text는 블록위에 나타낼 글자 
+            // color 는 해당 블록에 맞는 글자 
+            //hp는 몇 번 부딪혀야하는가?
+            // indestructible : 무적상태인지 아닌지
+
+            while (blockPool.length < numBlocks) {
+                blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
+
+            }
+            // blockPool의 length는 실시간 갱신중. --> push한 값이 최대 블록의 수만큼 삽입
+        } 
+        else if (layer === 3) {
+            // [3계층] W,X,Y,Z + K, B의 Getter 배치
+            blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_Y", text: "string Y", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_Z", text: "MyData Z", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            
+            blockPool.push({ type: "public_W", text: "int getW", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+            blockPool.push({ type: "public_X", text: "double getX", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+            blockPool.push({ type: "public_Y", text: "string getY", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+            blockPool.push({ type: "public_Z", text: "MyData getZ", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+
+            blockPool.push({ type: "protected_getK", text: "int getK", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_getB", text: "string getB", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            
+            while (blockPool.length < numBlocks) {
+                blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
+            }
+        } 
+        else if (layer === 2) {
+            // [2계층] W,X,Y,Z + K, B의 변수 정의 배치
+            blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_Y", text: "string Y", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "private_Z", text: "MyData Z", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            
+            blockPool.push({ type: "protected_K", text: "int K", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_B", text: "string B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+
+            while (blockPool.length < numBlocks) {
+                blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
+            }
+        }
+
+        // 셔플 알고리즘
+        for (let i = blockPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [blockPool[i], blockPool[j]] = [blockPool[j], blockPool[i]];
+        }
+
+        //블록의 위치를 무작위로 배치하기 위해서 blockpool 즉 하나의 layer에 있는 블록의 순서를 무작위로 배치
+
+        positions.forEach((pos, index) => {
+            blockGrid[pos.r][pos.c] = { ...blockPool[index], layer: layer };
+            // blockPool에는 type,text,color,hp,indestructible 속성들이 저장되어 있음. 그걸 ...으로 표시
+            // 그리고 layer라는 속성을 추가로 저장시킴
+        });
+
+        
+    }
+
+    // 2. 최심부 레이어 1 (BOSS)
+    if (layerPositions && layerPositions.length > 0) {
+        const bossPos = layerPositions;
+        blockGrid[bossPos.r][bossPos.c] = {
+            type: "BOSS", text: "BOSS", color: "#8E44AD", hp: 15, indestructible: false, layer: 1
+        };
+    }
+
+
+
+    // 3. 자바스크립트 객체 인스턴스화
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-            let layerType = oopMap[r][c];
-            let brickX = startX + c * (brickWidth + brickPadding);
-            let brickY = startY + r * (brickHeight + brickPadding);
+            let bData = blockGrid[r][c];
+            // 각각의 모든 블록에 대한 정보 저장하기
+            if (!bData) continue;
 
-            let initialStatus;
+            let brickX = startX + c * (brickWidth + brickPadding); //블록을 그릴 x 좌표
+            let brickY = startY + r * (brickHeight + brickPadding); //블록을 그릴 y 좌표
 
-            switch(layerType){
-                case 1:
-                    initialStatus="BOSS"
-                    break;
-                case 2:
-                    initialStatus="1계층"
-                    break;
-                case 3:
-                    initialStatus="2계층"
-                    break;
-                case 4:
-                    initialStatus=1;
-                    break;
-            }
+            let initialStatus = (bData.layer === 4) ? 1 : "LOCK"; 
+            let initialColor  = (bData.layer === 4) ? bData.color : "#222222"; 
+            let initialText   = bData.text; 
 
-
-            let initialColor = (layerType === 4) ? layerColors[layerType] : "#555555"; 
+            //각각의 모든 블록에 대한 hit시에 적용할 함수 지정하기
 
             let effect = () => {
-                if (layerType > 1) {
-                    let remainingBlocks = bricks.filter(b => b.layer === layerType && b.status === 1).length;
-                    
-                    if (remainingBlocks === 1) {
-                        bricks.forEach(b => {
-                            if (b.layer === layerType - 1) {
-                                b.status = 1; 
-                                b.color = layerColors[layerType - 1]; 
-                            }
-                        });
+                // ==========================================
+                // 💡 [핵심 연동 기믹] 타겟 저격 함수
+                // 목표 계층(targetLayer)과 목표 타입(targetType)을 찾아 강제 파괴
+                // ==========================================
+                const destroyTarget = (targetLayer, targetType) => {
+                    let target = bricks.find(b => b.layer === targetLayer && b.realType === targetType && b.status !== 0);
+                    //내 계층과 타겟의 계층이 같고 , 내 진짜 타입이 타겟의 타입과 같고 내 상태가 0 이 아니어야함. (부서시지 않았어야함) 
+                    if (target) {
+                        //타겟이 찾아지면 타겟의 상태를 0으로( 부서진 상태로 )
+                        target.status = 0; 
+                        brokenBricksCount++; // 진행도 완벽 동기화
                     }
-                } else if (layerType === 1) {
+                };
+
+                // 1) W, X, Y, Z 연동 (동일 계층 내의 private 변수 파괴)
+                if (bData.type === "public_W") destroyTarget(bData.layer, "private_W");
+                if (bData.type === "public_X") destroyTarget(bData.layer, "private_X");
+                if (bData.type === "public_Y") destroyTarget(bData.layer, "private_Y");
+                if (bData.type === "public_Z") destroyTarget(bData.layer, "private_Z");
+
+                // 2) K, B 연동 (3계층에서 2계층의 protected 변수 원격 파괴)
+                if (bData.type === "protected_getK") destroyTarget(2, "protected_K");
+                if (bData.type === "protected_getB") destroyTarget(2, "protected_B");
+
+                // 계층 전체 클리어 판정 및 안쪽 층 잠금 해제
+                let remainingBlocks = bricks.filter(b => b.layer === bData.layer && b.status === 1).length;
+                //내 계층과 데이터의 계층이 같고 내 상태가 1인 벽돌의 길이
+
+                if (remainingBlocks === 0 && bData.layer > 1) {
+                    //남은 블록의 길이가 0이고 계층이 1이상인 경우에
+
+                    bricks.forEach(b => {
+                        if (b.layer === bData.layer - 1 && b.status === "LOCK") {
+                            // 현재 계층의 바로 아래 계층이면서 상태가 lock 인 경우에는 
+                            // 상태를 1(깰 수 있는 상태)로 바꾼다음에
+                            b.status = 1; 
+                            if (b.tempData) {
+                                b.color = b.tempData.color; 
+                            }
+                            // 색상은 자신의 원래
+                        }
+                    });
+                }
+
+                if (bData.type === "BOSS") {
                     spawnBomb(brickX + brickWidth / 2, brickY + brickHeight / 2);
                 }
             };
 
-            // 1x1 크기의 중앙 코어 블록 생성
-            if (layerType === 1) {
-                bricks.push(new BossBrick(brickX, brickY, {
-                    status: initialStatus,
-                    color: initialColor,
-                    layer: layerType,
-                    effectFunc: effect,
-                    hp: 15 // 체력 15 유지
-                }));
-            } else {
-                bricks.push(new Brick(brickX, brickY, {
-                    status: initialStatus,
-                    color: initialColor,
-                    layer: layerType, 
-                    effectFunc: effect
-                }));
-            }
-            totalBricks++;
+            let newBrick = new BossBrick(brickX, brickY, {
+                status: initialStatus,
+                color: initialColor,
+                text: initialText,
+                realText: bData.text, 
+                realType: bData.type,
+                layer: bData.layer,
+                effectFunc: effect,
+                hp: bData.hp,
+                indestructible: bData.indestructible
+            });
+            //각각의 row와 col의 boss 스테이지의블록들을 생성하기
+            newBrick.tempData = { color: bData.color, text: bData.text };
+
+            bricks.push(newBrick);
+            // bricks 안에 깨야할 블록으로 푸쉬하기
+            totalBricks++; 
+            // 깨야할 블록 카운트 추가
         }
     }
 }
-
-
-
-
 //====================================
 
 function loadDSStage4() {
