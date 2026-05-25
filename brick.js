@@ -34,7 +34,7 @@ const brickOffsetTop = 30;
 const brickOffsetLeft = 35;
 
 let bricks = [];
-let currentStage = 0;    // 현재 진행 중인 스테이지 번호
+let currentStage = 4;    // 현재 진행 중인 스테이지 번호
 let maxStage = 0;
 let clearCount = 0; //이산수학 미니 스테이지 클리어 수
 let brokenBricksCount = 0; // 부순 벽돌 개수
@@ -319,6 +319,71 @@ class BossBrick extends Brick {
         }
     }
 }
+
+class Stage4Brick extends Brick {
+    constructor(x, y, option = {}) {
+        super(x, y, option);
+        this.dsType = option.dsType || "stack"; // "stack" 또는 "queue"
+        
+        // 배열 크기를 3 또는 4로 랜덤 설정
+        const size = Math.random() < 0.5 ? 3 : 4;
+        this.elements = [];
+        for (let i = 1; i <= size; i++) {
+            this.elements.push(i);
+        }
+        
+        // 배열 내용을 모두 표시하기 위해 가로 폭을 1.5배로 넓게 설정
+        this.width = brickWidth * 1.5;
+        this.height = brickHeight;
+    }
+
+    onHit() {
+        if (this.status === "LOCK") return; 
+
+        const currentFunc = statusMap[this.status] || {effectFunc: this.effectFunc};
+        this.effectFunc = currentFunc.effectFunc;
+
+        if (this.status === 1) {
+            if (this.elements.length > 0) {
+                if (this.dsType === "stack") {
+                    this.elements.pop(); // 맨 뒤 원소 삭제
+                } else if (this.dsType === "queue") {
+                    this.elements.shift(); // 맨 앞 원소 삭제
+                }
+            }
+
+            // 원소가 모두 없어지면 블럭 파괴
+            if (this.elements.length === 0) {
+                this.status = 0;
+                brokenBricksCount++;
+                this.effectFunc();
+            } else {
+                this.effectFunc();
+            }
+        }
+    }
+
+    draw(ctx) {
+        if (this.status !== 0) {
+            const currentStyle = statusMap[this.status] || { color: this.color };
+            ctx.beginPath();
+            ctx.rect(this.x, this.y, this.width, this.height);
+            ctx.fillStyle = currentStyle.color;
+            ctx.fill();
+            ctx.closePath();
+
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "bold 12px 'Galmuri11', sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+
+            // 현재 배열 상태를 텍스트로 렌더링 (예: stack[1,2,3])
+            let displayText = `${this.dsType}[${this.elements.join(",")}]`;
+            ctx.fillText(displayText, this.x + this.width / 2, this.y + this.height / 2);
+        }
+    }
+}
+
 //==== 스테이지들 ======
 //스테이지 별로 맵 로드
 function showStage() { //스테이지 선택 화면
@@ -1130,43 +1195,99 @@ function loadOopStage() {
 }
 //====================================
 
-function loadDSStage4() {
-    // 스테이지 4의 벽돌 행과 열 개수 설정
-    const brickRowCount = 3;
-    const brickColumnCount = 4;
-    const colors = ["#E74C3C", "#9B59B6", "#3498DB", "#2ECC71", "#F1C40F"]; // 각 행마다 다른 색상 적용
+function loadDSStage4(treeDepth = 4) {
+    if (typeof resizeGame === 'function') {
+        resizeGame(1280, 800); // 트리 형태의 안정적인 배치를 위해 캔버스 크기 고정
+    }
+    
+    // 동적으로 설정 가능한 트리 구조를 위한 기준 좌표 설정
+    const startY = 80;
+    const gapY = 80;
+    const centerX = canvas.width / 2;
+    
+    // 각 블록에 확률적으로 부여될 이벤트 생성 함수
+    const getRandomEffect = (blockX, blockY, blockWidth, blockHeight) => {
+        const weightedEffects = [
+            { weight: 10, effect: () => setBallOpacity(0.2) }, // 10%: 공 투명화
+            { weight: 15, effect: subBarsize },                // 15%: 패들 축소
+            { weight: 15, effect: addBarsize },                // 15%: 패들 확대
+            { weight: 10, effect: () => { dx = dx > 0 ? dx + 1 : dx - 1; dy = dy > 0 ? dy + 1 : dy - 1; } }, // 10%: 속도 증가
+            { weight: 20, effect: spawnRandomBrick },          // 20%: 랜덤 위치 블록 생성
+            { weight: 10, effect: () => spawnBomb(blockX + blockWidth / 2, blockY + blockHeight / 2) },      // 10%: 폭탄 드랍
+            { weight: 20, effect: () => {} }                   // 20%: 효과 없음 (총합 100%)
+        ];
 
-
-    for(let c = 0; c < brickColumnCount; c++) {
-        for(let r = 0; r < brickRowCount; r++) {
-            // 벽돌이 그려질 X, Y 좌표 계산
-            let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
-            let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
-
-            // 기능별로 확률 부여 (총합이 100이 되도록 설정)
-            const weightedEffects = [
-                { weight: 0, effect: () => setBallOpacity(0.2) }, // 확률 10%: 투명화
-                { weight: 0, effect: subBarsize },                // 확률 20%: 패들 축소
-                { weight: 0, effect: addBarsize },                // 확률 20%: 패들 확대
-                { weight: 0, effect: () => { dx = dx > 0 ? dx + 1 : dx - 1; dy = dy > 0 ? dy + 1 : dy - 1; } }, // 확률 10%: 속도 증가
-                { weight: 70, effect: spawnRandomBrick },          // 랜덤 위치에 블록 생성 (원하는 확률로 weight 수정)
-                { weight: 0, effect: () => spawnBomb(brickX + brickWidth / 2, brickY + brickHeight / 2) }, // 확률 30%: 폭탄 드랍
-                { weight: 30, effect: () => {} }                   // 확률 70%: 효과 없음
-            ];
-
-            // 확률(가중치)을 기반으로 랜덤 효과 선택
-            let randomEffect = () => {};
-            let rand = Math.random() * 100; // 0 ~ 100 사이의 난수 생성
-            let cumulativeWeight = 0; // 누적 확률
-            
-            for (let i = 0; i < weightedEffects.length; i++) {
-                cumulativeWeight += weightedEffects[i].weight;
-                if (rand < cumulativeWeight) {
-                    randomEffect = weightedEffects[i].effect;
-                    break;
-                }
+        let rand = Math.random() * 100;
+        let cumulativeWeight = 0;
+        
+        for (let i = 0; i < weightedEffects.length; i++) {
+            cumulativeWeight += weightedEffects[i].weight;
+            if (rand < cumulativeWeight) {
+                return weightedEffects[i].effect;
             }
-            bricks.push(new Brick(brickX, brickY, {color: colors[r], effectFunc: randomEffect}));
+        }
+        return () => {};
+    };
+
+    // 트리 구조 동적 생성
+    let leafGap = 150; // 맨 아래 리프 노드 간의 기본 X축 간격
+    const maxLeaves = Math.pow(2, treeDepth - 1); // 맨 아래(리프) 노드의 총 개수
+
+    // 화면 밖으로 나가지 않도록 최대 간격(leafGap)을 캔버스 너비에 맞춰 자동 축소
+    if (maxLeaves > 1) {
+        // 리프 노드의 폭(120)을 고려해 좌우 여백 140px을 빼고 계산
+        const maxAllowedGap = (canvas.width - 140) / (maxLeaves - 1);
+        leafGap = Math.min(leafGap, maxAllowedGap);
+    }
+
+    for (let level = 0; level < treeDepth; level++) {
+        let numNodes = Math.pow(2, level); // 현재 레벨의 총 노드 수 (1, 2, 4...)
+        let currentY = startY + level * gapY;
+        
+        // 현재 레벨의 노드 간격 및 시작 X 좌표 계산 (중앙 정렬을 위함)
+        let gapX = leafGap * Math.pow(2, (treeDepth - 1) - level);
+        let startX = centerX - ((numNodes - 1) * gapX) / 2;
+        
+        for (let i = 0; i < numNodes; i++) {
+            let nodeCenterX = startX + i * gapX;
+            
+            // 리프 노드 (가장 깊은 레벨)인 경우 Stage4Brick (Stack/Queue) 생성
+            if (level === treeDepth - 1) {
+                let bWidth = brickWidth * 1.5;
+                let blockX = nodeCenterX - bWidth / 2;
+                
+                let isStack = (i % 2 === 0);
+                let dsType = isStack ? "stack" : "queue";
+                let color = isStack ? "#3498DB" : "#2ECC71";
+                
+                let stage4Brick = new Stage4Brick(blockX, currentY, {
+                    color: color,
+                    dsType: dsType,
+                    effectFunc: getRandomEffect(blockX, currentY, bWidth, brickHeight)
+                });
+                bricks.push(stage4Brick);
+            } else {
+                // 내부 노드 (Root 또는 Node)
+                let blockX = nodeCenterX - brickWidth / 2;
+                let text = (level === 0) ? "Root" : "Node";
+                let color = (level === 0) ? "#F1C40F" : (i % 2 === 0 ? "#E74C3C" : "#9B59B6");
+                
+                let effect = (level === 0) ? () => {
+                    // Root 블록 파괴 시 남은 모든 벽돌 연쇄 파괴 (스테이지 즉시 클리어)
+                    bricks.forEach(b => {
+                        if (b.status !== 0) {
+                            b.status = 0;
+                            brokenBricksCount++;
+                        }
+                    });
+                } : getRandomEffect(blockX, currentY, brickWidth, brickHeight);
+
+                bricks.push(new Brick(blockX, currentY, {
+                    color: color,
+                    text: text,
+                    effectFunc: effect
+                }));
+            }
             totalBricks++;
         }
     }
