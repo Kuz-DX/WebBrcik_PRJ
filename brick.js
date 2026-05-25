@@ -335,8 +335,7 @@ class BossBrick extends Brick {
         ctx.fill();
         ctx.closePath();
 
-        // 스택/큐의 타입과 남은 원소 배열 상태를 동적으로 텍스트로 렌더링
-        let displayText = `${this.dsType.toUpperCase()} [${this.elements.join(", ")}]`;
+        let displayText = this.text || "";
         
         if (displayText !== "") {
             ctx.fillStyle = "#FFFFFF";
@@ -419,9 +418,9 @@ class Stage4Brick extends Brick {
         ctx.fillStyle = this.color;
         ctx.fill();
         ctx.closePath();
-        // this.text로 블록을 표현함 
 
-        let displayText = this.text || ""; 
+        // 스택/큐의 타입과 남은 원소 배열 상태를 동적으로 텍스트로 렌더링
+        let displayText = `${this.dsType.toUpperCase()} [${this.elements.join(", ")}]`;
         
         if (displayText !== "") {
             ctx.fillStyle = "#FFFFFF";
