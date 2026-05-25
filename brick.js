@@ -46,7 +46,7 @@ const brickOffsetTop = 30;
 const brickOffsetLeft = 35;
 
 let bricks = [];
-let currentStage = 0;    // 현재 진행 중인 스테이지 번호
+let currentStage = 4;    // 현재 진행 중인 스테이지 번호
 let maxStage = 0; //최대 진행 스테이지 변수
 let clearCount = 0; //이산수학 미니 스테이지 클리어 수
 let brokenBricksCount = 0; // 부순 벽돌 개수
@@ -334,9 +334,9 @@ class BossBrick extends Brick {
         ctx.fillStyle = this.color;
         ctx.fill();
         ctx.closePath();
-        // this.text로 블록을 표현함 
 
-        let displayText = this.text || ""; 
+        // 스택/큐의 타입과 남은 원소 배열 상태를 동적으로 텍스트로 렌더링
+        let displayText = `${this.dsType.toUpperCase()} [${this.elements.join(", ")}]`;
         
         if (displayText !== "") {
             ctx.fillStyle = "#FFFFFF";
