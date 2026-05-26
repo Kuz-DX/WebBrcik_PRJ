@@ -36,10 +36,10 @@
         <div class="modal-content difficulty-modal">
             <h2>난이도 선택</h2>
             <div class="difficulty-list">
-                <button class="diff-item-btn active" id="easyBtn">Easy</button>
-                <button class="diff-item-btn" id="normalBtn">Normal</button>
-                <button class="diff-item-btn" id="gosuBtn">Go-su</button>
-                <button class="diff-item-btn" id="goatBtn">G.O.A.T</button>
+                <button class="diff-item-btn active" value="easy">Easy</button>
+                <button class="diff-item-btn" value="normal">Normal</button>
+                <button class="diff-item-btn" value="gosu">Go-su</button>
+                <button class="diff-item-btn" value="goat">G.O.A.T</button>
             </div>
             <button id="closeDifficultyBtn" class="close-btn">닫기</button>
         </div>
@@ -56,12 +56,18 @@
         </div>
         <div id="gameOverScreen">
             <h2 id="gameOverMessage">게임 오버!</h2>
-            <button class="restartBtn">다시 시작</button>
+            <div class="divBtn">
+                <button class="restartBtn">다시 시작</button>
+                <button class="mainBtn">메인으로</button>
+            </div>
         </div>
         <div id="gameClearScreen">
             <h2 id="gameClearMessage">스테이지 클리어!</h2>
-            <button class="restartBtn">다시 시작</button>
-            <button id="nextBtn">다음 단계</button>
+            <div class="divBtn">
+                <button class="restartBtn">다시 시작</button>
+                <button class="mainBtn">메인으로</button>
+                <button id="nextBtn">다음 단계</button>
+            </div>
         </div>
     </div>
 

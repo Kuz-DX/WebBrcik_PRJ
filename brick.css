@@ -28,6 +28,7 @@ body {
     left: 0;
     display: block; 
     z-index: 1;    
+    background-size: cover;
 }
 
 #gameOverScreen {
@@ -64,11 +65,30 @@ body {
     margin-bottom: 20px;
 }
 
+.divBtn{
+    display: flex;
+    flex-direction: row; 
+    justify-content: center;
+    align-items: center;
+    gap: 30px;          
+    margin-top: 25px;
+}
+
 .restartBtn {
     padding: 10px 20px;
     font-size: 18px;
     cursor: pointer;
-    background-color: #4CAF50;
+    background-color: #E74C3C;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+}
+.mainBtn {
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    background-color: #BDC3C7;
     color: white;
     border: none;
     border-radius: 5px;
@@ -78,7 +98,7 @@ body {
     padding: 10px 20px;
     font-size: 18px;
     cursor: pointer;
-    background-color: #4CAF50;
+    background-color: #2ECC71;
     color: white;
     border: none;
     border-radius: 5px;
@@ -86,10 +106,13 @@ body {
 }
 
 .restartBtn:hover {
-    background-color: #45a049;
+    background-color: #C0392B;
+}
+.mainBtn:hover {
+    background-color: #F1C40F;
 }
 #nextBtn:hover {
-    background-color: #45a049;
+    background-color: #26A65B;
 }
 
 #quest-box {
@@ -160,7 +183,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(20, 24, 30, 0.95); 
+  background: rgba(20, 24, 30, 1); 
   display: none; /*flex*/
   flex-direction: column;
   justify-content: center;

@@ -5,7 +5,9 @@ const ctx = canvas.getContext("2d");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const gameClearScreen = document.getElementById("gameClearScreen");
+const mainScreen = document.getElementById("mainScreen");
 const restartBtn = document.querySelectorAll(".restartBtn");
+const mainBtn = document.querySelectorAll(".mainBtn");
 const stageSelectBtn = document.getElementById("stageSelectBtn");
 const stageSelectModal = document.getElementById("stageSelectModal");
 const closeStageBtn = document.getElementById("closeStageBtn");
@@ -81,6 +83,15 @@ restartBtn.forEach((item)=>{
         initGame();
     });
 });// 다시 시작 버튼 클릭 시 게임 초기화
+mainBtn.forEach((item)=>{
+    item.addEventListener("click", ()=>{
+        mainScreen.style.display = "flex";
+        gameOverScreen.style.display = "none";
+        gameClearScreen.style.display = "none";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        resizeGame(600,400);
+    });
+});//메인으로 가는 버튼
 nextBtn.addEventListener("click",initGame); // 다음 단계 버튼 클릭 시 다음 단계 진행
 canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
 startNewGameBtn.addEventListener("click", () => { //게임 시작 이벤트
@@ -91,8 +102,7 @@ startNewGameBtn.addEventListener("click", () => { //게임 시작 이벤트
 stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
       btn.addEventListener("click", (e) => {
           // 데이터 속성(data-stage)에서 스테이지 인덱스 추출
-          let selectedStage = parseInt(e.target.getAttribute("data-stage"));
-          if (selectedStage == 3 || selectedStage == 4) selectedStage++;
+          let selectedStage = parseInt(e.target.getAttribute("value"));
           // 메인 화면 및 모달 닫기
           stageSelectModal.style.display = "none";
           mainScreen.style.display = "none";
@@ -102,10 +112,33 @@ stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
           initGame();
       });
   });
+//닫기 버튼 addevent
 closeStageBtn.addEventListener("click", ()=>{
     stageSelectModal.style.display = "none";
+    mainScreen.style.display = "flex";
 });
+difficultyBtn.addEventListener("click", () => {
+      difficultyModal.style.display = "flex";
+  });
+  closeDifficultyBtn.addEventListener("click", () => {
+      difficultyModal.style.display = "none";
+  });
 
+  // 난이도 버튼 클릭 시 동적 변경
+diffItemBtns.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        // 기존에 선택된 active클래스를 삭제, 현재 클릭한 버튼에 부여
+        const level = e.currentTarget.getAttribute("value");
+        const selectLevel = diff[level];
+        // targetPaddleWidth = config.paddle; //환경변수 통일 후 사용
+        // gameSpeed = config.speed;
+        // bombProb = config.bomb;
+        diffItemBtns.forEach(b => b.classList.remove("active"));
+        e.currentTarget.classList.add("active");
+        
+        console.log(`난이도 변경 완료!`);
+    });
+});
 
 
 function mouseMoveHandler(e) {
@@ -178,30 +211,43 @@ function clickBombHandler(e) { //폭탄 클릭 핸들러
 document.addEventListener("keydown", cheatKeyHandler, false);
 
 function cheatKeyHandler(e) {
-    // Z 키: 겉껍질 강제 파괴 및 보스 캡슐화 해제
     if (e.key === 'z' || e.key === 'Z') {
+        
+        if (currentStage !== 2) {
+            currentStage = 2; 
+            initGame(); 
+        }
+
         let destroyedByCheat = 0;
 
         for (let i = 0; i < bricks.length; i++) {
             let b = bricks[i];
             
-            // 보스 블록이 아닌 모든 일반/방어 블록들을 즉시 파괴
             if (b.realType !== "BOSS" && b.status !== 0) {
                 b.status = 0; 
                 destroyedByCheat++;
-            }
-            
-            // 보스 블록의 무적 잠금을 풀어줌
-            if (b.realType === "BOSS" && b.status === "LOCK") {
-                b.status = 1;         
-                b.color = "#8E44AD"; // 보스 고유 색상(보라색) 복구
-                b.text = "BOSS";
+            } else if (b.realType === "BOSS" && b.status !== 0) {
+                
+                // 💡 치트키로 잠금이 풀릴 때도 웅장하게 거대화!
+                if (b.status === "LOCK") {
+                    let expandWidth = brickWidth * 2;
+                    let expandHeight = brickWidth * 2;
+                    
+                    b.x = b.x + (b.width / 2) - (expandWidth / 2);
+                    b.y = b.y + (b.height / 2) - (expandHeight / 2);
+                    b.width = expandWidth;
+                    b.height = expandHeight;
+                    
+                    if (b.tempData) b.color = b.tempData.color;
+                }
+                
+                b.hp = 15;
+                b.status = 1;
             }
         }
+        
         brokenBricksCount += destroyedByCheat;
     }
-
-    
 }
 
 class Bomb { //폭탄배열
@@ -374,6 +420,8 @@ class BossBrick extends Brick {
     }
 }
 
+
+
 class Stage4Brick extends Brick {
     constructor(x, y, option = {}) {
         super(x, y, option);
@@ -456,6 +504,28 @@ class Stage4Brick extends Brick {
             ctx.lineWidth = 1;
             ctx.strokeRect(barX, barY, barWidth, barHeight);
         }
+    }
+}
+const diff = { //난이도 객체
+    easy: {
+        paddleWidth : 15,
+        speed : 10,
+        bombProb : 3
+    },
+    normal: {
+        paddleWidth : 10,
+        speed : 15,
+        bombProb : 10,
+    },
+    gosu : {
+        paddleWidth : 7,
+        speed : 20,
+        bombProb : 15
+    },
+    goat : {
+        paddleWidth : 5,
+        speed : 25,
+        bombProb : 25
     }
 }
 //대화 관련 함수
@@ -554,7 +624,7 @@ function loadTutorialStage(){
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
-
+    canvas.style.backgroundImage = "url(./testImg/CProgramming.png)";
     for(let c = 0; c < brickColumnCount; c++) {
         for(let r = 0; r < brickRowCount; r++) {
             let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
@@ -795,6 +865,19 @@ function drawPaddle() {
     ctx.fillStyle = "#000000"; 
     ctx.fill();
     ctx.closePath();
+
+    //패들에 글씨출력 부분
+    ctx.fillStyle = "#FFFFFF"; // 글씨 색상
+    ctx.font = "bold 12px 'Galmuri11', sans-serif"; // 기존 사용 중인 폰트 
+    ctx.textAlign = "center";   // 가로 정렬 기준을 중앙으로
+    ctx.textBaseline = "middle"; // 세로 정렬 기준을 중앙으로
+
+    // 패들의 정중앙 X 좌표와 Y 좌표 계산
+    const textX = paddleX + (paddleWidth / 2);
+    const textY = (canvas.height - paddleHeight) + (paddleHeight / 2);
+
+    // 텍스트 출력 (예: 5)
+    ctx.fillText(`count : ${brokenBricksCount}`, textX, textY);
 }
 
 function drawBricks() { //Brick class에 draw 메소드 이용해 변경 //1차원 틀로 변경
@@ -1017,6 +1100,7 @@ function randomBossMap() {
     ];
 }
 function loadDiscreteStage() {
+    canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
     const map = randomDiscreteMap();
     const brickRowCount = map.length;
     const brickColumnCount = map[0].length;
@@ -1112,6 +1196,8 @@ function resizeGame(newWidth, newHeight) {
 }
 
 
+
+
 // ==========================================
 // 중간보스: 객체지향 프로그래밍 스테이지 (7x7 정중앙 1x1 보스 맵)
 // ========================================== 김기범
@@ -1133,7 +1219,17 @@ function resizeGame(newWidth, newHeight) {
 // ==========================================
 // 중간보스: 객체지향 스테이지 (완벽한 Getter-변수 연동 파괴 적용)
 // ==========================================
+// ==========================================
+// 중간보스: 객체지향 스테이지 (완성형 OOP 속성 매핑 및 원격 저격)
+// ==========================================
+// ==========================================
+// 중간보스: 객체지향 스테이지 (캡슐 보스 최적화 및 Z키 워프 통합)
+// ==========================================
+// ==========================================
+// 중간보스: 객체지향 프로그래밍 스테이지 (고정형 보스 적용)
+// ==========================================
 function loadOopStage() {
+    canvas.style.backgroundImage = "url(./testImg/Oop.png)";
     if (typeof resizeGame === 'function') {
         resizeGame(800, 600);
     }
@@ -1142,7 +1238,6 @@ function loadOopStage() {
     const cols = 7;
 
     const layerPositions = { 1: [], 2: [], 3: [], 4: [] };
-    //각각의 계층을 저장하는 변수
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             let distFromEdge = Math.min(r, c, rows - 1 - r, cols - 1 - c);
@@ -1150,36 +1245,26 @@ function loadOopStage() {
             layerPositions[layerType].push({ r: r, c: c });
         }
     }
-    // 위치에 따라서 계층 정보를 설정해서 저장하기
 
     const totalBlockWidth = cols * (brickWidth + brickPadding) - brickPadding;
-    // 총 블록 넓이 
-
-    //그리기 시작할 X 좌표
     const startX = (canvas.width - totalBlockWidth) / 2;
-    
-    //그리기 시작할 y 좌표
     const startY = 70;
 
     const blockGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
-    //row만한 배열을 하나 형성한 후에 , 각각의 row에 대해서 cols 길이의 array를 만들고 null로 모두 채우기
 
-    // 색상 팔레트
-    const COLOR_PUBLIC    = "#3498DB"; // 파란색
-    const COLOR_PROTECTED = "#2ECC71"; // 초록색
-    const COLOR_PRIVATE   = "#E74C3C"; // 빨간색
-    const COLOR_NORMAL    = "#95A5A6"; // 회색
+    const COLOR_PUBLIC    = "#3498DB"; 
+    const COLOR_PROTECTED = "#2ECC71"; 
+    const COLOR_PRIVATE   = "#E74C3C"; 
+    const COLOR_NORMAL    = "#95A5A6"; 
+    const COLOR_BOSS      = "#76941e";
 
     // 1. 계층별 독립적 블록 풀(Pool) 생성 및 무작위 셔플
-    for (let layer = 4; layer >= 2; layer--) {
+    for (let layer = 4; layer >= 1; layer--) {
         const positions = layerPositions[layer];
         const numBlocks = positions.length;
-        //numBlocks 각 계층에 들어갈 수 있는 블록의 수
-
         let blockPool = [];
 
         if (layer === 4) {
-            // [4계층] W,X,Y,Z 관련 필수 배치
             blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
             blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
             blockPool.push({ type: "private_Y", text: "string Y", color: COLOR_PRIVATE, hp: 1, indestructible: true });
@@ -1190,21 +1275,15 @@ function loadOopStage() {
             blockPool.push({ type: "public_Y", text: "string getY", color: COLOR_PUBLIC, hp: 1, indestructible: false });
             blockPool.push({ type: "public_Z", text: "MyData getZ", color: COLOR_PUBLIC, hp: 1, indestructible: false });
 
-            //4계층에 들어갈 필수내용 public과 private 블록들
-            // type은 private,protected,public 등이 들어가는 속성 
-            // text는 블록위에 나타낼 글자 
-            // color 는 해당 블록에 맞는 글자 
-            //hp는 몇 번 부딪혀야하는가?
-            // indestructible : 무적상태인지 아닌지
+            blockPool.push({ type: "addbar", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
+            blockPool.push({ type: "addbar", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
+            blockPool.push({ type: "addbar", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
 
             while (blockPool.length < numBlocks) {
                 blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
-
             }
-            // blockPool의 length는 실시간 갱신중. --> push한 값이 최대 블록의 수만큼 삽입
         } 
         else if (layer === 3) {
-            // [3계층] W,X,Y,Z + K, B의 Getter 배치
             blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
             blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
             blockPool.push({ type: "private_Y", text: "string Y", color: COLOR_PRIVATE, hp: 1, indestructible: true });
@@ -1217,119 +1296,104 @@ function loadOopStage() {
 
             blockPool.push({ type: "protected_getK", text: "int getK", color: COLOR_PROTECTED, hp: 1, indestructible: false });
             blockPool.push({ type: "protected_getB", text: "string getB", color: COLOR_PROTECTED, hp: 1, indestructible: false });
-            
+
             while (blockPool.length < numBlocks) {
                 blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
             }
         } 
         else if (layer === 2) {
-            // [2계층] W,X,Y,Z + K, B의 변수 정의 배치
             blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
             blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
-            blockPool.push({ type: "private_Y", text: "string Y", color: COLOR_PRIVATE, hp: 1, indestructible: true });
-            blockPool.push({ type: "private_Z", text: "MyData Z", color: COLOR_PRIVATE, hp: 1, indestructible: true });
+            blockPool.push({ type: "public_W", text: "int getW", color: COLOR_PUBLIC, hp: 1, indestructible: false });
+            blockPool.push({ type: "public_X", text: "double getX", color: COLOR_PUBLIC, hp: 1, indestructible: false });
             
-            blockPool.push({ type: "protected_K", text: "int K", color: COLOR_PROTECTED, hp: 1, indestructible: false });
-            blockPool.push({ type: "protected_B", text: "string B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_K", text: "protected int K", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_B", text: "protected string B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+
+
 
             while (blockPool.length < numBlocks) {
                 blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
             }
+        }else if (layer === 1) { 
+            blockPool.push({ type: "BOSS", text: "BOSS", color: "#8E44AD", hp: 15,color:COLOR_BOSS, indestructible: false });
         }
 
-        // 셔플 알고리즘
         for (let i = blockPool.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [blockPool[i], blockPool[j]] = [blockPool[j], blockPool[i]];
         }
 
-        //블록의 위치를 무작위로 배치하기 위해서 blockpool 즉 하나의 layer에 있는 블록의 순서를 무작위로 배치
-
         positions.forEach((pos, index) => {
             blockGrid[pos.r][pos.c] = { ...blockPool[index], layer: layer };
-            // blockPool에는 type,text,color,hp,indestructible 속성들이 저장되어 있음. 그걸 ...으로 표시
-            // 그리고 layer라는 속성을 추가로 저장시킴
         });
-
-        
     }
 
-    // 2. 최심부 레이어 1 (BOSS)
-    if (layerPositions && layerPositions.length > 0) {
-        const bossPos = layerPositions;
-        blockGrid[bossPos.r][bossPos.c] = {
-            type: "BOSS", text: "BOSS", color: "#8E44AD", hp: 15, indestructible: false, layer: 1
-        };
-    }
-
-
-
-    // 3. 자바스크립트 객체 인스턴스화
+    // 2. 자바스크립트 객체 인스턴스화
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             let bData = blockGrid[r][c];
-            // 각각의 모든 블록에 대한 정보 저장하기
             if (!bData) continue;
 
-            let brickX = startX + c * (brickWidth + brickPadding); //블록을 그릴 x 좌표
-            let brickY = startY + r * (brickHeight + brickPadding); //블록을 그릴 y 좌표
+            let brickX = startX + c * (brickWidth + brickPadding);
+            let brickY = startY + r * (brickHeight + brickPadding);
 
             let initialStatus = (bData.layer === 4) ? 1 : "LOCK"; 
             let initialColor  = (bData.layer === 4) ? bData.color : "#222222"; 
             let initialText   = bData.text; 
 
-            //각각의 모든 블록에 대한 hit시에 적용할 함수 지정하기
-
             let effect = () => {
-                // ==========================================
-                // 💡 [핵심 연동 기믹] 타겟 저격 함수
-                // 목표 계층(targetLayer)과 목표 타입(targetType)을 찾아 강제 파괴
-                // ==========================================
                 const destroyTarget = (targetLayer, targetType) => {
                     let target = bricks.find(b => b.layer === targetLayer && b.realType === targetType && b.status !== 0);
-                    //내 계층과 타겟의 계층이 같고 , 내 진짜 타입이 타겟의 타입과 같고 내 상태가 0 이 아니어야함. (부서시지 않았어야함) 
                     if (target) {
-                        //타겟이 찾아지면 타겟의 상태를 0으로( 부서진 상태로 )
                         target.status = 0; 
-                        brokenBricksCount++; // 진행도 완벽 동기화
+                        brokenBricksCount++; 
                     }
                 };
 
-                // 1) W, X, Y, Z 연동 (동일 계층 내의 private 변수 파괴)
                 if (bData.type === "public_W") destroyTarget(bData.layer, "private_W");
                 if (bData.type === "public_X") destroyTarget(bData.layer, "private_X");
                 if (bData.type === "public_Y") destroyTarget(bData.layer, "private_Y");
                 if (bData.type === "public_Z") destroyTarget(bData.layer, "private_Z");
 
-                // 2) K, B 연동 (3계층에서 2계층의 protected 변수 원격 파괴)
                 if (bData.type === "protected_getK") destroyTarget(2, "protected_K");
                 if (bData.type === "protected_getB") destroyTarget(2, "protected_B");
 
-                // 계층 전체 클리어 판정 및 안쪽 층 잠금 해제
                 let remainingBlocks = bricks.filter(b => b.layer === bData.layer && b.status === 1).length;
-                //내 계층과 데이터의 계층이 같고 내 상태가 1인 벽돌의 길이
-
+                
                 if (remainingBlocks === 0 && bData.layer > 1) {
-                    //남은 블록의 길이가 0이고 계층이 1이상인 경우에
-
                     bricks.forEach(b => {
                         if (b.layer === bData.layer - 1 && b.status === "LOCK") {
-                            // 현재 계층의 바로 아래 계층이면서 상태가 lock 인 경우에는 
-                            // 상태를 1(깰 수 있는 상태)로 바꾼다음에
                             b.status = 1; 
                             if (b.tempData) {
                                 b.color = b.tempData.color; 
                             }
-                            // 색상은 자신의 원래
+                            
+                            // 보스의 잠금이 풀렸다면, 그때 크기를 2배로 확장!
+                            if (b.realType === "BOSS") {
+                                let expandWidth = brickWidth * 2;
+                                let expandHeight = brickWidth * 2;
+                                
+                                // 중심점 유지를 위해 좌표 보정
+                                b.x = b.x + (b.width / 2) - (expandWidth / 2);
+                                b.y = b.y + (b.height / 2) - (expandHeight / 2);
+                                
+                                b.width = expandWidth;
+                                b.height = expandHeight;
+                            }
                         }
                     });
                 }
 
                 if (bData.type === "BOSS") {
-                    spawnBomb(brickX + brickWidth / 2, brickY + brickHeight / 2);
+                    let currentBoss = bricks.find(b => b.realType === "BOSS");
+                    if (currentBoss) {
+                        spawnBomb(currentBoss.x + currentBoss.width / 2, currentBoss.y + currentBoss.height / 2);
+                    }
                 }
             };
 
+            // 처음엔 모두 기본 너비(brickWidth), 기본 높이(brickHeight)로 얌전하게 생성
             let newBrick = new BossBrick(brickX, brickY, {
                 status: initialStatus,
                 color: initialColor,
@@ -1341,19 +1405,18 @@ function loadOopStage() {
                 hp: bData.hp,
                 indestructible: bData.indestructible
             });
-            //각각의 row와 col의 boss 스테이지의블록들을 생성하기
-            newBrick.tempData = { color: bData.color, text: bData.text };
+
+            newBrick.tempData = { color: bData.color };
 
             bricks.push(newBrick);
-            // bricks 안에 깨야할 블록으로 푸쉬하기
             totalBricks++; 
-            // 깨야할 블록 카운트 추가
         }
     }
 }
 
 //점심시간 스테이지
 function loadLunchStage(){
+    canvas.style.backgroundImage = "url(./testImg/lunchTime.jpeg)";
     isGameOver = true;
     startScene("lunchTime");
 }
@@ -1361,6 +1424,7 @@ function loadLunchStage(){
 //====================================
 
 function loadDSStage4(treeDepth = 4) {
+    canvas.style.backgroundImage = "url(./testImg/Ds.png)";
     if (typeof resizeGame === 'function') {
         resizeGame(1280, 800); // 트리 형태의 안정적인 배치를 위해 캔버스 크기 고정
     }
