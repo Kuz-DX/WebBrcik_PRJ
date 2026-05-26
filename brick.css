@@ -28,6 +28,7 @@ body {
     left: 0;
     display: block; 
     z-index: 1;    
+    background-size: cover;
 }
 
 #gameOverScreen {
