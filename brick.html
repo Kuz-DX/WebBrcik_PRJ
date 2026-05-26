@@ -15,10 +15,11 @@
         </div>
         <div class="menu-container-br">
             <button id="startNewGameBtn" class="menu-btn">시작</button>
+            <button id="difficultyBtn" class="menu-btn">난이도</button>
             <button id="optionBtn" class="menu-btn">옵션</button>
         </div>
         </div> 
-        <div id="stageSelectModal" class="modal-overlay" style="display: none;">
+        <div id="stageSelectModal" class="modal-overlay">
             <div class="modal-content select-modal">
             <h2>스테이지 선택</h2>
             <div class="stage-list">
@@ -31,9 +32,20 @@
                 <button id="closeStageBtn" class="close-btn">닫기</button>
             </div>
         </div>
-    
+    <div id="difficultyModal" class="modal-overlay">
+        <div class="modal-content difficulty-modal">
+            <h2>난이도 선택</h2>
+            <div class="difficulty-list">
+                <button class="diff-item-btn active" id="easyBtn">Easy</button>
+                <button class="diff-item-btn" id="normalBtn">Normal</button>
+                <button class="diff-item-btn" id="gosuBtn">Go-su</button>
+                <button class="diff-item-btn" id="goatBtn">G.O.A.T</button>
+            </div>
+            <button id="closeDifficultyBtn" class="close-btn">닫기</button>
+        </div>
+    </div>
 
-        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <canvas id="gameCanvas"></canvas>
         <!-- 대화창 (필요할 때만 노출) -->
         <div id="quest-box" class="dialogue-box">
             <div id="speaker" class="speaker-name">sampleText</div>

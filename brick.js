@@ -12,6 +12,10 @@ const closeStageBtn = document.getElementById("closeStageBtn");
 const stageItemBtns = document.querySelectorAll(".stage-item-btn");
 const nextBtn = document.getElementById("nextBtn");
 const questBox = document.getElementById("quest-box");
+const difficultyBtn = document.getElementById("difficultyBtn");
+const difficultyModal = document.getElementById("difficultyModal");
+const closeDifficultyBtn = document.getElementById("closeDifficultyBtn");
+const diffItemBtns = document.querySelectorAll(".diff-item-btn");
 
 //대화창 관련 변수
 let allStoryData = {"lunchTime": [
@@ -97,6 +101,9 @@ stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
           initGame();
       });
   });
+closeStageBtn.addEventListener("click", ()=>{
+    stageSelectModal.style.display = "none";
+});
 
 
 
