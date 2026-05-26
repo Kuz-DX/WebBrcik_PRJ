@@ -127,6 +127,11 @@ difficultyBtn.addEventListener("click", () => {
 diffItemBtns.forEach(btn => {
     btn.addEventListener("click", (e) => {
         // 기존에 선택된 active클래스를 삭제, 현재 클릭한 버튼에 부여
+        const level = e.currentTarget.getAttribute("value");
+        const selectLevel = diff[level];
+        // targetPaddleWidth = config.paddle; //환경변수 통일 후 사용
+        // gameSpeed = config.speed;
+        // bombProb = config.bomb;
         diffItemBtns.forEach(b => b.classList.remove("active"));
         e.currentTarget.classList.add("active");
         
@@ -481,26 +486,26 @@ class Stage4Brick extends Brick {
         }
     }
 }
-class Diff { //난이도 클래스
-    setEasy() {
-        paddleWidth = 15;
-        speed = 10;
-        bombProb = 3;
-    };
-    setNormal() {
-        paddleWidth = 10;
-        speed = 15;
-        bombProb = 10;
-    };
-    setGosu() {
-        paddleWidth = 7;
-        speed = 20;
-        bombProb = 15;
-    };
-    setGoat() {
-        paddleWidth = 5;
-        speed = 25;
-        bombProb = 25;
+const diff = { //난이도 객체
+    easy: {
+        paddleWidth : 15,
+        speed : 10,
+        bombProb : 3
+    },
+    normal: {
+        paddleWidth : 10,
+        speed : 15,
+        bombProb : 10,
+    },
+    gosu : {
+        paddleWidth : 7,
+        speed : 20,
+        bombProb : 15
+    },
+    goat : {
+        paddleWidth : 5,
+        speed : 25,
+        bombProb : 25
     }
 }
 //대화 관련 함수
