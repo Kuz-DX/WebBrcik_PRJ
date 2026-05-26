@@ -50,13 +50,14 @@ const brickOffsetTop = 30;
 const brickOffsetLeft = 35;
 
 let bricks = [];
-let currentStage = 4;    // 현재 진행 중인 스테이지 번호
+let currentStage = 0;    // 현재 진행 중인 스테이지 번호
 let maxStage = 0; //최대 진행 스테이지 변수
 let clearCount = 0; //이산수학 미니 스테이지 클리어 수
 let brokenBricksCount = 0; // 부순 벽돌 개수
 let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
 let bombs = [];          // 폭탄들을 저장할 배열
 
+const gateStageCount = 4; //이산수학 게이트 스테이지 수(마지막은 회로)
 const statusMap = { 
     "T":    { color: "#48dd57", effectFunc: tfHit },
     "F":    { color: "#d74e1d", effectFunc: tfHit },
@@ -64,12 +65,12 @@ const statusMap = {
     "CONFIRM": {color: "#9ec12b", effectFunc: confirmHit},
 
     // 논리 게이트 색상, 실행할 함수, 실제 연산식 한번에 정의
-    "AND":  { color: "#8e8e8e", effectFunc: gateHit, operation: (a, b) => a && b },
-    "OR":   { color: "#444444", effectFunc: gateHit, operation: (a, b) => a || b },    
-    "XOR":  { color: "#555555", effectFunc: gateHit, operation: (a, b) => a !== b },
-    "NAND": { color: "#555555", effectFunc: gateHit, operation: (a, b) => !(a && b) },
-    "NOR":  { color: "#555555", effectFunc: gateHit, operation: (a, b) => !(a || b) },
-    "XNOR": { color: "#555555", effectFunc: gateHit, operation: (a, b) => a === b }
+    "AND":  { color: "#8e8e8e", operation: (a, b) => a && b },
+    "OR":   { color: "#444444", operation: (a, b) => a || b },    
+    "XOR":  { color: "#555555", operation: (a, b) => a !== b },
+    "NAND": { color: "#555555", operation: (a, b) => !(a && b) },
+    "NOR":  { color: "#555555", operation: (a, b) => !(a || b) },
+    "XNOR": { color: "#555555", operation: (a, b) => a === b }
 };
 
 // 이벤트 리스너 추가
@@ -260,9 +261,13 @@ class Brick {
     }
 
     onHit() { //블록 쳤을때 기능 함수 실행 //status 맵 활용 추가
-        const currentFunc = statusMap[this.status] || {effectFunc: this.effectFunc};
-        this.effectFunc = currentFunc.effectFunc;
-        this.effectFunc();
+        const currentFunc = statusMap[this.status]?.effectFunc || this.effectFunc;
+
+        // ★ 핵심: 함수를 실행할 때 'this'가 무조건 현재 벽돌을 가리키도록 강제합니다.
+        if (typeof currentFunc === "function") {
+            currentFunc.call(this);
+        }
+        
         if(this.status===1){
             this.status = 0;
             brokenBricksCount++;
@@ -750,13 +755,21 @@ function collisionDetection() {
                 if(brokenBricksCount >= totalBricks) {
                     
                     if (currentStage === 1) {//이산수학 미니 스테이지
-                        const targetGateCount = 3; //미니 스테이지 수
                         clearCount++;
                         
-                        if (clearCount < targetGateCount) {                           
+                        if (clearCount < gateStageCount) {                           
                             bricks = [];
                             brokenBricksCount = 0;
                             totalBricks = 0;
+                            // 공, 패들위치 초기화
+                            x = canvas.width / 2;
+                            y = canvas.height - 30;
+                            const speed = 5; 
+                            const startAngle = Math.random() * Math.PI / 4;  
+                            dx = speed * Math.sin(startAngle);
+                            dy = -speed * Math.cos(startAngle);
+                            paddleX = (canvas.width - paddleWidth) / 2;
+
                             loadDiscreteStage();
                             return;
                         }else clearCount = 0;
@@ -875,6 +888,7 @@ function draw() {
     drawBombs();
 
     if(isGameStarted){ //게임 시작 시에만 작동
+        if(currentStage == 1) updateCircuits(); //이산스테이지 출력 변화
         collisionDetection();
         updateBall();
         updatePaddle();
@@ -888,6 +902,8 @@ function draw() {
 
 //==== 이산수학 스테이지 기능 구현중 ====
 function tfHit(){
+    if(this.notEvent) return;
+
     if(this.status === "T") this.status = "F";
     else if(this.status === "F") this.status = "T";
 }
@@ -905,107 +921,29 @@ function notHit() {
         brokenBricksCount++;
     }
 }
-
-// 실시간 논리 회로 연산 엔진
-function updateCircuits() {
-    const dX = brickWidth + brickPadding;
-    const dY = brickHeight + brickPadding;
-
-    for (let i = 0; i < bricks.length; i++) {
-        let b = bricks[i];
-        if (b.status === 0) continue;
-
-        let gateInfo = statusMap[b.status];
-        
-        // 현재 블록이 논리 연산이 가능한 게이트라면
-        if (gateInfo && gateInfo.operation) {
-            
-            // 아래 양옆의 입력 블록과, 위쪽의 출력 블록을 찾음
-            let leftIn = bricks.find(br => br.status !== 0 && br.x === b.x - dX && br.y === b.y + dY);
-            let rightIn = bricks.find(br => br.status !== 0 && br.x === b.x + dX && br.y === b.y + dY);
-            let topOut = bricks.find(br => br.status !== 0 && br.x === b.x && br.y === b.y - dY);
-
-            // 3개가 모두 존재한다면 실시간으로 계산하여 출력 블록을 덮어씌움
-            if (leftIn && rightIn && topOut) {
-                let lVal = (leftIn.status === "T");
-                let rVal = (rightIn.status === "T");
-                let res = gateInfo.operation(lVal, rVal);
-                
-                // 위쪽 블록이 T나 F일 때만 값을 바꿔줌 (안전장치)
-                if (topOut.status === "T" || topOut.status === "F") {
-                    topOut.status = res ? "T" : "F";
-                }
-            }
-        }
-    }
-}
-
-function confirmHit() { //논리 게이트 출력이 T일때 치면 전부 파괴
-    // 맵 생성할 때 지정해둔 아래쪽(leftInput 위치) 블록을 바로 참조
-    let belowBlock = this.leftInput; // CONFIRM 입장에서는 아래쪽 F블록이 leftInput 자리에 있음
-    
-    if (belowBlock && belowBlock.status === "T") {
-        bricks.forEach(br => {
-            if (br.status !== 0) {
-                br.status = 0;
+function confirmHit() { //최종이 T이면 모든 블록 파괴
+    if (this.target.status === "T") {
+        bricks.forEach(b => {
+            if (b.status !== 0 && b.status !== 1) {
+                b.status = 0;
                 brokenBricksCount++;
             }
         });
     }
 }
-
-function gateHit() {
-    let leftInput = null;
-    let rightInput = null;
-    let topOutput = null;
-
-    // 블록 간의 가로, 세로 간격 계산
-    const distanceX = brickWidth + brickPadding; 
-    const distanceY = brickHeight + brickPadding;
-
-    //Gate 블록 주변의 입출력 블록 탐색
+// 실시간 논리 회로 연산
+function updateCircuits() {
     for (let i = 0; i < bricks.length; i++) {
         let b = bricks[i];
-        
-        // 위쪽 출력 블록 x 같고, y 한칸 위
-        if (b.x === this.x && b.y === this.y - distanceY) {
-            topOutput = b;
-        }
-        // 왼쪽 아래 입력 블록 x 한칸 왼쪽, y 한칸 아래
-        else if (b.x === this.x - distanceX && b.y === this.y + distanceY) {
-            leftInput = b;
-        }
-        // 오른쪽 아래 입력 블록 x 한칸 오른쪽, y 한칸 아래
-        else if (b.x === this.x + distanceX && b.y === this.y + distanceY) {
-            rightInput = b;
-        }
-    }
-
-    // 세 개의 블록이 모두 제자리에 존재하는지 확인
-    if (leftInput && rightInput && topOutput) {
-        
-        // T/F 문자를 boolean으로 변환
-        let leftVal = (leftInput.status === "T");
-        let rightVal = (rightInput.status === "T");
-        let topVal = (topOutput.status === "T");
-        
-        const currentGate = statusMap[this.status];
-
-        // 해당 블록에 operation 있는지 확인
-        if (currentGate && currentGate.operation) {
-            
-            // 꺼내온 operation을 이용해 계산 실행
-            let expectedResult = currentGate.operation(leftVal, rightVal);
-
-            // 결과가 topVal과 일치하면 전부 파괴
-            if (expectedResult === topVal) {
-                this.status = 0;
-                leftInput.status = 0;
-                rightInput.status = 0;
-                topOutput.status = 0;
-                
-                brokenBricksCount += 4;
-            }
+        if (b.status === 0) continue;
+        // 게이트일 때만 작동
+        if (b.isGate) {                
+            // boolean으로 변환
+            let lVal = (b.leftInput.status === "T");
+            let rVal = (b.rightInput.status === "T");
+            let res = b.operation(lVal, rVal);     
+            //출력 블록 변경
+            b.topOutput.status = res ? "T" : "F";       
         }
     }
 }
@@ -1013,48 +951,132 @@ function gateHit() {
 function randomDiscreteMap() { // 맵 랜덤생성
     // 게이트만 배열로 추출
     const Gates = Object.keys(statusMap).filter(key => statusMap[key].operation);
-
     const randomGate = Gates[Math.floor(Math.random() * Gates.length)];
 
-    const leftVal = Math.random() < 0.5 ? "T" : "F";
-    const rightVal = Math.random() < 0.5 ? "T" : "F";
+    let leftVal, rightVal;
+    let isAnswerTrue;
 
-    const leftBool = (leftVal === "T");
-    const rightBool = (rightVal === "T");
-    
-    // statusMap에서 연산식 꺼내서 계산
-    const resultBool = statusMap[randomGate].operation(leftBool, rightBool);
-    const topVal = resultBool ? "T" : "F";
+    do {
+        leftVal = Math.random() < 0.5 ? "T" : "F";
+        rightVal = Math.random() < 0.5 ? "T" : "F";
+        isAnswerTrue = statusMap[randomGate].operation(leftVal === "T", rightVal === "T");
+        
+    // 결과가 true면 값을 새로 뽑음
+    } while (isAnswerTrue); 
 
-    return [
-        [1, 0, topVal, 0, 0, 1],
-        [1, 0, randomGate, 0, 0, 1, 1],
-        [1, leftVal, 0, rightVal, 1, "NOT",1]
-    ];
+    if(clearCount < gateStageCount - 1){
+        return [
+            [  0,     1,    "F",    1,    0,    0],                   // R0: 출력 양옆을 벽돌로 보호
+            [  0,     0, randomGate, 0,   0,    0],            // R1: 게이트
+            ["NOT", leftVal, 1, rightVal, 1, "CONFIRM"] // R2: 입력값 사이사이에 벽돌 배치
+        ];
+    }else return randomBossMap();
 }
 
+function randomBossMap() {
+    const Gates = Object.keys(statusMap).filter(key => statusMap[key].operation);
+    
+    let gTop, gLeft, gRight;
+    let in1, in2, in3;
+    let isAnswerTrue;
 
+    // 시작하자마자 클리어되는 것을 막기 위한 시뮬레이션 루프
+    do {
+        // 1. 게이트 3개 랜덤 뽑기 (Top: 꼭대기, Left: 하단 왼쪽, Right: 하단 오른쪽)
+        gTop = Gates[Math.floor(Math.random() * Gates.length)];
+        gLeft = Gates[Math.floor(Math.random() * Gates.length)];
+        gRight = Gates[Math.floor(Math.random() * Gates.length)];
+
+        // 2. 맨 밑바닥 입력값 3개 랜덤 뽑기
+        in1 = Math.random() < 0.5 ? "T" : "F";
+        in2 = Math.random() < 0.5 ? "T" : "F";
+        in3 = Math.random() < 0.5 ? "T" : "F";
+
+        // 3. T/F 텍스트를 boolean으로 변환하여 가상 연산 돌려보기
+        let val1 = (in1 === "T");
+        let val2 = (in2 === "T");
+        let val3 = (in3 === "T");
+
+        // 하단 게이트 2개 계산 (가운데 입력값인 val2는 양쪽 게이트가 공유함)
+        let midLeftResult = statusMap[gLeft].operation(val1, val2);
+        let midRightResult = statusMap[gRight].operation(val2, val3);
+        
+        // 꼭대기 코어 게이트 계산
+        isAnswerTrue = statusMap[gTop].operation(midLeftResult, midRightResult);
+
+    // 꼭대기 결과가 T(정답)면 맵을 버리고 다시 뽑음!
+    } while (isAnswerTrue); 
+
+    // 4. 완벽하게 준비된 데이터를 2차원 배열로 배치 (주변에 일반 벽돌(1)을 섞어 난이도 증가)
+    return [
+        [ 0,     0,   1,  "F",  1,    0,    0],               // R0: 최상단 출력과 호위 벽돌
+        [ 0,     0,   0,  gTop, 0,    0,    0],              // R1: 중앙 코어 게이트
+        [ 0,     0,  "F",  1,  "F",   0,    0],             // R2: 중간 출력 2개와 중앙 방해 벽돌
+        [ 0,     0, gLeft, 0, gRight, 0,    0],        // R3: 하단 게이트 2개
+        ["NOT", in1,  0,  in2,  0,   in3, "CONFIRM"]
+    ];
+}
 function loadDiscreteStage() {
     const map = randomDiscreteMap();
     const brickRowCount = map.length;
     const brickColumnCount = map[0].length;
 
-    for (let r = 0; r < brickRowCount; r++) { //차후에 blockdraw 이용해서 변경예정
+    // 블록 객체를 임시로 담아둘 2차원 배열 생성
+    const grid = Array.from({ length: brickRowCount }, () => Array(brickColumnCount).fill(null));
+
+    let confirmBlock = null;
+    let finalOutputBlock = null;
+
+    // 객체 생성 후 grid 에 저장
+    for (let r = 0; r < brickRowCount; r++) {
         for (let c = 0; c < brickColumnCount; c++) {
             let blockStatus = map[r][c];
 
-            if (blockStatus === 0 || blockStatus === null || blockStatus === "") continue;
+            if (blockStatus === 0) continue;
 
             let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
             let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
             
-            bricks.push(new Brick(brickX, brickY, { status: blockStatus }));
-            totalBricks++;
+            // grid에 객체 저장
+            grid[r][c] = new Brick(brickX, brickY, { status: blockStatus });
+
         }
     }
-    totalBricks--;
-}
+    //grid 인덱스 기반으로 게이트에 입출력 참조설정
+    for (let r = 0; r < brickRowCount; r++) {
+        for (let c = 0; c < brickColumnCount; c++) {
+            let b = grid[r][c];
+            
+            if (b) { // 0이 아닐때
+                //게이트 블록인지 확인
+                let isGate = statusMap[b.status] && statusMap[b.status].operation;
 
+                if(isGate){
+                    //블록 속성 추가 operation, 게이트 확인
+                    b.isGate = true;
+                    b.operation = statusMap[b.status].operation
+                    // 입출력 블록 찾아 연결하기
+                    if (r - 1 >= 0) {
+                        b.topOutput = grid[r - 1][c];
+                        b.topOutput.notEvent = true;
+                    }
+                    if (r + 1 < brickRowCount && c - 1 >= 0) b.leftInput = grid[r + 1][c - 1];
+                    if (r + 1 < brickRowCount && c + 1 < brickColumnCount) b.rightInput = grid[r + 1][c + 1];
+                }
+                // confirm 블록 저장
+                if (b.status === "CONFIRM") {
+                    confirmBlock = b;
+                }
+                if (r === 0 && (b.status === "T" || b.status === "F")) {
+                    finalOutputBlock = b; // 최상단 TF 블록을 최종 출력으로 저장
+                }
+                bricks.push(b);
+                totalBricks++;
+            }
+        }
+    }
+    if (confirmBlock && finalOutputBlock) confirmBlock.target = finalOutputBlock;
+}
 
 
 // === 중간보스 스테이지 구현 ===
