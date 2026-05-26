@@ -5,6 +5,7 @@ const ctx = canvas.getContext("2d");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const gameClearScreen = document.getElementById("gameClearScreen");
+const mainScreen = document.getElementById("mainScreen");
 const restartBtn = document.querySelectorAll(".restartBtn");
 const mainBtn = document.querySelectorAll(".mainBtn");
 const stageSelectBtn = document.getElementById("stageSelectBtn");
@@ -113,6 +114,7 @@ stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
 //닫기 버튼 addevent
 closeStageBtn.addEventListener("click", ()=>{
     stageSelectModal.style.display = "none";
+    mainScreen.style.display = "flex";
 });
 difficultyBtn.addEventListener("click", () => {
       difficultyModal.style.display = "flex";
