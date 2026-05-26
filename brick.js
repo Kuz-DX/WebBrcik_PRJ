@@ -6,6 +6,7 @@ const gameOverScreen = document.getElementById("gameOverScreen");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const gameClearScreen = document.getElementById("gameClearScreen");
 const restartBtn = document.querySelectorAll(".restartBtn");
+const mainBtn = document.querySelectorAll(".mainBtn");
 const stageSelectBtn = document.getElementById("stageSelectBtn");
 const stageSelectModal = document.getElementById("stageSelectModal");
 const closeStageBtn = document.getElementById("closeStageBtn");
@@ -80,6 +81,15 @@ restartBtn.forEach((item)=>{
         initGame();
     });
 });// 다시 시작 버튼 클릭 시 게임 초기화
+mainBtn.forEach((item)=>{
+    item.addEventListener("click", ()=>{
+        mainScreen.style.display = "flex";
+        gameOverScreen.style.display = "none";
+        gameClearScreen.style.display = "none";
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        resizeGame(600,400);
+    });
+});//메인으로 가는 버튼
 nextBtn.addEventListener("click",initGame); // 다음 단계 버튼 클릭 시 다음 단계 진행
 canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
 startNewGameBtn.addEventListener("click", () => { //게임 시작 이벤트
@@ -90,8 +100,7 @@ startNewGameBtn.addEventListener("click", () => { //게임 시작 이벤트
 stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
       btn.addEventListener("click", (e) => {
           // 데이터 속성(data-stage)에서 스테이지 인덱스 추출
-          let selectedStage = parseInt(e.target.getAttribute("data-stage"));
-          if (selectedStage == 3 || selectedStage == 4) selectedStage++;
+          let selectedStage = parseInt(e.target.getAttribute("value"));
           // 메인 화면 및 모달 닫기
           stageSelectModal.style.display = "none";
           mainScreen.style.display = "none";
@@ -101,10 +110,27 @@ stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
           initGame();
       });
   });
+//닫기 버튼 addevent
 closeStageBtn.addEventListener("click", ()=>{
     stageSelectModal.style.display = "none";
 });
+difficultyBtn.addEventListener("click", () => {
+      difficultyModal.style.display = "flex";
+  });
+  closeDifficultyBtn.addEventListener("click", () => {
+      difficultyModal.style.display = "none";
+  });
 
+  // 난이도 버튼 클릭 시 동적 변경
+diffItemBtns.forEach(btn => {
+    btn.addEventListener("click", (e) => {
+        // 기존에 선택된 active클래스를 삭제, 현재 클릭한 버튼에 부여
+        diffItemBtns.forEach(b => b.classList.remove("active"));
+        e.currentTarget.classList.add("active");
+        
+        console.log(`난이도 변경 완료!`);
+    });
+});
 
 
 function mouseMoveHandler(e) {
@@ -453,6 +479,28 @@ class Stage4Brick extends Brick {
         }
     }
 }
+class Diff { //난이도 클래스
+    setEasy() {
+        paddleWidth = 15;
+        speed = 10;
+        bombProb = 3;
+    };
+    setNormal() {
+        paddleWidth = 10;
+        speed = 15;
+        bombProb = 10;
+    };
+    setGosu() {
+        paddleWidth = 7;
+        speed = 20;
+        bombProb = 15;
+    };
+    setGoat() {
+        paddleWidth = 5;
+        speed = 25;
+        bombProb = 25;
+    }
+}
 //대화 관련 함수
 function startScene(sceneName) {
   isGameStarted = false; // 대화가 시작되면 물리엔진을 멈춤
@@ -549,7 +597,7 @@ function loadTutorialStage(){
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
-
+    canvas.style.backgroundImage = "url(./testImg/CProgramming.png)";
     for(let c = 0; c < brickColumnCount; c++) {
         for(let r = 0; r < brickRowCount; r++) {
             let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
@@ -782,6 +830,19 @@ function drawPaddle() {
     ctx.fillStyle = "#000000"; 
     ctx.fill();
     ctx.closePath();
+
+    //패들에 글씨출력 부분
+    ctx.fillStyle = "#FFFFFF"; // 글씨 색상
+    ctx.font = "bold 12px 'Galmuri11', sans-serif"; // 기존 사용 중인 폰트 
+    ctx.textAlign = "center";   // 가로 정렬 기준을 중앙으로
+    ctx.textBaseline = "middle"; // 세로 정렬 기준을 중앙으로
+
+    // 패들의 정중앙 X 좌표와 Y 좌표 계산
+    const textX = paddleX + (paddleWidth / 2);
+    const textY = (canvas.height - paddleHeight) + (paddleHeight / 2);
+
+    // 텍스트 출력 (예: 5)
+    ctx.fillText(`count : ${brokenBricksCount}`, textX, textY);
 }
 
 function drawBricks() { //Brick class에 draw 메소드 이용해 변경 //1차원 틀로 변경
@@ -1035,6 +1096,7 @@ function randomDiscreteMap() { // 맵 랜덤생성
 
 
 function loadDiscreteStage() {
+    canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
     const map = randomDiscreteMap();
     const brickRowCount = map.length;
     const brickColumnCount = map[0].length;
@@ -1112,6 +1174,7 @@ function resizeGame(newWidth, newHeight) {
 // 중간보스: 객체지향 스테이지 (완벽한 Getter-변수 연동 파괴 적용)
 // ==========================================
 function loadOopStage() {
+    canvas.style.backgroundImage = "url(./testImg/Oop.png)";
     if (typeof resizeGame === 'function') {
         resizeGame(800, 600);
     }
@@ -1332,6 +1395,7 @@ function loadOopStage() {
 
 //점심시간 스테이지
 function loadLunchStage(){
+    canvas.style.backgroundImage = "url(./testImg/lunchTime.jpeg)";
     isGameOver = true;
     startScene("lunchTime");
 }
@@ -1339,6 +1403,7 @@ function loadLunchStage(){
 //====================================
 
 function loadDSStage4(treeDepth = 4) {
+    canvas.style.backgroundImage = "url(./testImg/Ds.png)";
     if (typeof resizeGame === 'function') {
         resizeGame(1280, 800); // 트리 형태의 안정적인 배치를 위해 캔버스 크기 고정
     }
