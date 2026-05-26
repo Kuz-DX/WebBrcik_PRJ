@@ -61,6 +61,7 @@ const statusMap = {
     "T":    { color: "#48dd57", effectFunc: tfHit },
     "F":    { color: "#d74e1d", effectFunc: tfHit },
     "NOT":  { color: "#555555", effectFunc: notHit },
+    "CONFIRM": {color: "#9ec12b", effectFunc: confirmHit},
 
     // 논리 게이트 색상, 실행할 함수, 실제 연산식 한번에 정의
     "AND":  { color: "#8e8e8e", effectFunc: gateHit, operation: (a, b) => a && b },
@@ -171,9 +172,6 @@ function clickBombHandler(e) { //폭탄 클릭 핸들러
         }
     }
 }
-
-
-
 
 // === 무결점 디버그 시스템: Z(보스 직행) & K(스테이지 스킵) 이벤트 (최적화 버전) ===
 document.addEventListener("keydown", cheatKeyHandler, false);
@@ -294,8 +292,6 @@ class Brick {
         }
     }
 }
-
-
 
 class BossBrick extends Brick {
     constructor(x, y, option = {}) {
@@ -895,70 +891,67 @@ function tfHit(){
     if(this.status === "T") this.status = "F";
     else if(this.status === "F") this.status = "T";
 }
-
-
-function andHit(){
-    let leftBrick = null;
-    let rightBrick = null;
-    const distance = brickWidth + brickPadding;
-    //양 옆 블록 찾기
-    for (let i = 0; i < bricks.length; i++) {
-        let b = bricks[i];
-        if (b.y === this.y) {
-            if (b.x === this.x - distance) leftBrick = b;
-            if (b.x === this.x + distance) rightBrick = b;
-        }
-    }
-    // 양옆이 모두 T 블록이면 블록 파괴
-    if (leftBrick && rightBrick) { //leftBrick과 rightBrick이 존재하는지 체크
-        if (leftBrick.status === "T" && rightBrick.status === "T") {
-            this.status = 0;
-            leftBrick.status = 0;
-            rightBrick.status = 0;
-            brokenBricksCount += 3;
-        }
-    }
-}
-
-
-function orHit(){
-    let leftBrick = null;
-    let rightBrick = null;
-    const distance = brickWidth + brickPadding;
-    //양 옆 블록 찾기
-    for (let i = 0; i < bricks.length; i++) {
-        let b = bricks[i];
-        if (b.y === this.y) {
-            if (b.x === this.x - distance) leftBrick = b;
-            if (b.x === this.x + distance) rightBrick = b;
-        }
-    }
-    // 양옆이 모두 F 블록이 아닐때 블록 파괴
-    if (leftBrick && rightBrick) { //leftBrick과 rightBrick이 존재하는지 체크
-        if (!(leftBrick.status === "F" && rightBrick.status === "F")) {
-            this.status = 0;
-            leftBrick.status = 0;
-            rightBrick.status = 0;
-            brokenBricksCount += 3;
-        }
-    }
-}
-function loadDiscreteStage(){
-    const discreteMap = [
-        [1,1,1,1,1,1],
-        [1,1,1,1,1,1],
-        ["F","ADD","F","F","OR","F"]
-    ]
-    const brickRowCount = discreteMap.length;
-    const brickColumnCount = discreteMap[0].length;
-}
-
-
-function notHit(){
+function notHit() {
+    let tfCount = 0;
+    
     bricks.forEach(b => {
-        if(b.status === "T") b.status = "F";
-        else if(b.status === "F") b.status = "T";
+        if(b.status === "T") { b.status = "F"; tfCount++; }
+        else if(b.status === "F") { b.status = "T"; tfCount++; }
     });
+    
+    // TF 블록이 없으면 파괴
+    if (tfCount === 0) {
+        this.status = 0;
+        brokenBricksCount++;
+    }
+}
+
+// 실시간 논리 회로 연산 엔진
+function updateCircuits() {
+    const dX = brickWidth + brickPadding;
+    const dY = brickHeight + brickPadding;
+
+    for (let i = 0; i < bricks.length; i++) {
+        let b = bricks[i];
+        if (b.status === 0) continue;
+
+        let gateInfo = statusMap[b.status];
+        
+        // 현재 블록이 논리 연산이 가능한 게이트라면
+        if (gateInfo && gateInfo.operation) {
+            
+            // 아래 양옆의 입력 블록과, 위쪽의 출력 블록을 찾음
+            let leftIn = bricks.find(br => br.status !== 0 && br.x === b.x - dX && br.y === b.y + dY);
+            let rightIn = bricks.find(br => br.status !== 0 && br.x === b.x + dX && br.y === b.y + dY);
+            let topOut = bricks.find(br => br.status !== 0 && br.x === b.x && br.y === b.y - dY);
+
+            // 3개가 모두 존재한다면 실시간으로 계산하여 출력 블록을 덮어씌움
+            if (leftIn && rightIn && topOut) {
+                let lVal = (leftIn.status === "T");
+                let rVal = (rightIn.status === "T");
+                let res = gateInfo.operation(lVal, rVal);
+                
+                // 위쪽 블록이 T나 F일 때만 값을 바꿔줌 (안전장치)
+                if (topOut.status === "T" || topOut.status === "F") {
+                    topOut.status = res ? "T" : "F";
+                }
+            }
+        }
+    }
+}
+
+function confirmHit() { //논리 게이트 출력이 T일때 치면 전부 파괴
+    // 맵 생성할 때 지정해둔 아래쪽(leftInput 위치) 블록을 바로 참조
+    let belowBlock = this.leftInput; // CONFIRM 입장에서는 아래쪽 F블록이 leftInput 자리에 있음
+    
+    if (belowBlock && belowBlock.status === "T") {
+        bricks.forEach(br => {
+            if (br.status !== 0) {
+                br.status = 0;
+                brokenBricksCount++;
+            }
+        });
+    }
 }
 
 function gateHit() {
