@@ -136,19 +136,20 @@ closeDifficultyBtn.addEventListener("click", () => {
     difficultyModal.style.display = "none";
 });
 
-  // 난이도 버튼 클릭 시 동적 변경
+// 난이도 버튼 클릭 시 동적 변경
 diffItemBtns.forEach(btn => {
     btn.addEventListener("click", (e) => {
-        // 기존에 선택된 active클래스를 삭제, 현재 클릭한 버튼에 부여
         const level = e.currentTarget.getAttribute("value");
         const selectLevel = diff[level];
-        //targetPaddleWidth = config.paddle; //환경변수 통일 후 사용
-        //ballSpeed = config.speed;
-        // bombProb = config.bomb;
+        
+        // ★ 주석을 풀고 selectLevel 객체와 연결 완료!
+        targetPaddleWidth = selectLevel.paddleWidth * 10; 
+        ballSpeed = selectLevel.speed; 
+        
         diffItemBtns.forEach(b => b.classList.remove("active"));
         e.currentTarget.classList.add("active");
         
-        console.log(`난이도 변경 완료!`);
+        console.log(`난이도 변경 완료! 현재 속도: ${ballSpeed}, 패들 크기: ${targetPaddleWidth}`);
     });
 });
 
@@ -747,83 +748,63 @@ function resetBallAndPaddle() { //공, 패들 리셋 함수
 }
 // 충돌 감지 함수
 // === 무결점 물리 엔진 (1프레임 1충돌, 끼임 방지 및 정밀한 모서리 반사 적용) ===
+
+// 1. 순수하게 충돌 후 반사각만 계산하는 물리 전용 함수를 새로 만듭니다.
+function applyBrickPhysics(b, closestX, closestY, distanceSquared, distanceX, distanceY) {
+    let prevX = x - dx;
+    let prevY = y - dy;
+    let currentWidth = b.width || brickWidth;
+    let currentHeight = b.height || brickHeight;
+
+    let hitTopOrBottom = (prevY <= b.y || prevY >= b.y + currentHeight);
+    let hitLeftOrRight = (prevX <= b.x || prevX >= b.x + currentWidth);
+
+    if (hitTopOrBottom && !hitLeftOrRight) {
+        dy = -dy; 
+        y = (prevY <= b.y) ? b.y - ballRadius : b.y + currentHeight + ballRadius;
+    } else if (hitLeftOrRight && !hitTopOrBottom) {
+        dx = -dx; 
+        x = (prevX <= b.x) ? b.x - ballRadius : b.x + currentWidth + ballRadius;
+    } else {
+        // 모서리 반사 로직 (기존 코드와 동일)
+        let distance = Math.sqrt(distanceSquared);
+        if (distance === 0) {
+            dx = -dx; dy = -dy;
+        } else {
+            let nx = distanceX / distance; let ny = distanceY / distance;
+            let dotProduct = (dx * nx) + (dy * ny);
+            dx = dx - 2 * dotProduct * nx; dy = dy - 2 * dotProduct * ny;
+            x = closestX + nx * ballRadius; y = closestY + ny * ballRadius;
+        }
+    }
+}
+
+// 2. 본래 함수는 '흐름'만 제어하도록 훨씬 짧게 줄입니다.
 function collisionDetection() {
-    let hasCollidedThisFrame = false; // 1프레임 1충돌을 보장하기 위한 플래그
+    let hasCollidedThisFrame = false; 
 
     for(let i = 0; i < bricks.length; i++) {
-        if (hasCollidedThisFrame) break; // 이번 프레임에서 이미 충돌을 처리했다면 연산 중단
-
+        if (hasCollidedThisFrame) break; 
         let b = bricks[i];
+        
         if(b.status !== 0) { 
             let currentWidth = b.width || brickWidth;
             let currentHeight = b.height || brickHeight;
-
-            // 1. 블록의 사각형 영역 안에서 공의 중심(x, y)과 가장 가까운 지점(충돌점) 찾기
             let closestX = Math.max(b.x, Math.min(x, b.x + currentWidth));
             let closestY = Math.max(b.y, Math.min(y, b.y + currentHeight));
-
-            // 2. 피타고라스 정리를 이용해 공 중심과 가장 가까운 지점 간의 거리 계산
             let distanceX = x - closestX;
             let distanceY = y - closestY;
             let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
 
-            // 3. 거리가 공의 반지름(ballRadius)보다 작으면 충돌 발생!
+            // [역할 1] 감지
             if (distanceSquared < (ballRadius * ballRadius)) {
-                hasCollidedThisFrame = true; // 다중 파괴 원천 차단
+                hasCollidedThisFrame = true; 
 
-                // 4. 공이 뚫고 들어온 방향을 알아내기 위해 이전 프레임 위치 계산
-                let prevX = x - dx;
-                let prevY = y - dy;
+                // [역할 2] 물리 반사 (새로 만든 함수 호출)
+                applyBrickPhysics(b, closestX, closestY, distanceSquared, distanceX, distanceY);
 
-                let hitTopOrBottom = (prevY <= b.y || prevY >= b.y + currentHeight);
-                let hitLeftOrRight = (prevX <= b.x || prevX >= b.x + currentWidth);
-
-                // 5. 충돌 면에 따른 반사 처리
-                if (hitTopOrBottom && !hitLeftOrRight) {
-                    // 상하 평면 충돌
-                    dy = -dy; 
-                    y = (prevY <= b.y) ? b.y - ballRadius : b.y + currentHeight + ballRadius;
-                } 
-                else if (hitLeftOrRight && !hitTopOrBottom) {
-                    // 좌우 평면 충돌
-                    dx = -dx; 
-                    x = (prevX <= b.x) ? b.x - ballRadius : b.x + currentWidth + ballRadius;
-                } 
-                else {
-                    // ==========================================
-                    // 💡 [핵심 구현] 모서리 정밀 충돌 물리 엔진 적용
-                    // ==========================================
-                    let distance = Math.sqrt(distanceSquared);
-                    
-                    // 예외 처리: 공의 중심이 정확히 모서리와 겹친 경우 (단순 반전)
-                    if (distance === 0) {
-                        dx = -dx;
-                        dy = -dy;
-                    } else {
-                        // 1) 법선 벡터 정규화 (길이를 1로 만듦)
-                        let nx = distanceX / distance;
-                        let ny = distanceY / distance;
-
-                        // 2) 속도 벡터와 법선 벡터의 내적(Dot Product) 계산
-                        let dotProduct = (dx * nx) + (dy * ny);
-
-                        // 3) 반사 벡터 공식 (Reflection Vector) 적용
-                        dx = dx - 2 * dotProduct * nx;
-                        dy = dy - 2 * dotProduct * ny;
-                        
-                        // 4) 모서리 끼임(겹침) 방지를 위해 공을 충돌 지점 바깥으로 정확히 밀어냄
-                        x = closestX + nx * ballRadius;
-                        y = closestY + ny * ballRadius;
-                    }
-                }
-
-                // 블록 타격 효과 실행
+                // [역할 3] 타격 처리
                 b.onHit(); 
-
-                // 클리어 조건 검사
-                if(brokenBricksCount >= totalBricks) {
-                    StageClear(); //함수 분리
-                }
             }
         }
     }
@@ -878,41 +859,36 @@ function drawBombs() {
 
 
 // === 무결점 업데이트: 패들 히트박스 확장 및 가장자리 튕김 보정 ===
-function updateBall(){
-    // 1. 좌우 벽면 충돌
-    if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) {
-        dx = -dx;
-    }
-    
-    // 2. 상단 벽면 충돌
-    if(y + dy < ballRadius) {
-        dy = -dy;
-    } 
-    // 3. 패들 충돌 확인 (히트박스 확장)
-    else if(y + dy > canvas.height - ballRadius - paddleHeight) {
-        // [수정됨] 공의 중심(x)이 아니라, 테두리(ballRadius)가 닿았을 때도 충돌로 인정합니다.
+// 패들 충돌 계산 전용 함수 //updateBall에서 빼옴
+function checkPaddleCollision() {
+    if(y + dy > canvas.height - ballRadius - paddleHeight) {
         if(x > paddleX - ballRadius && x < paddleX + paddleWidth + ballRadius) {
-            
             let hitPoint = x - (paddleX + paddleWidth / 2);
-            // [수정됨] 확장된 히트박스 비율에 맞춰 정규화 분모도 넓혀줍니다.
             let normalizedHit = hitPoint / ((paddleWidth / 2) + ballRadius);
-            
-            // 안전장치: 비율이 -1 ~ 1을 초과하지 않도록 제한 (공이 맵 밖으로 튕기는 것 방지)
             normalizedHit = Math.max(-1, Math.min(1, normalizedHit));
-            
             let bounceAngle = normalizedHit * (Math.PI / 3); 
             
             dx = ballSpeed * Math.sin(bounceAngle);
             dy = -ballSpeed * Math.cos(bounceAngle); 
         }
     }
+}
+
+function updateBall(){
+    // 1. 벽 충돌
+    if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
+    if(y + dy < ballRadius) dy = -dy; 
     
-    // 4. 바닥에 닿았을 때 게임 오버
+    // 2. 패들 충돌 (함수 호출로 대체)
+    checkPaddleCollision();
+    
+    // 3. 바닥 충돌 (게임오버)
     if(y + dy > canvas.height - ballRadius) {
         endGame("바닥에 닿았습니다. 게임 오버!");
         return;
     }
     
+    // 4. 이동 적용
     x += dx;
     y += dy;
 }
@@ -952,8 +928,8 @@ function loop() { //draw 이름이 겹쳐서 loop로 변경
         updateBall();
         updatePaddle();
         updateBombs();
+        if(brokenBricksCount >= totalBricks) StageClear();
     }
-
     // 충돌 감지 직후 승리하여 isGameOver가 true로 바뀌었다면 진행 멈춤
     if (isGameOver) return; 
     animationId = requestAnimationFrame(loop);
