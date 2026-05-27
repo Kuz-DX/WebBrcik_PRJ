@@ -28,10 +28,12 @@ let allStoryData = {"lunchTime": [
 let currentScript = ["sampleText"]; 
 let currentIndex = 0;
 
+let animationId = null; // 애니메이션 루프 ID를 저장할 변수
 
 
 // 게임 상태 변수 선언
 let x, y, dx, dy, paddleX;
+let ballSpeed = 7; //공속도 변수 이름 통일
 let isGameOver = true;
 let isGameStarted = false;
 let isCleared = false; //스테이지 클리어 상태 변수
@@ -48,7 +50,7 @@ let targetPaddleWidth = 100;
 const brickWidth = 80;
 const brickHeight = 20;
 const brickPadding = 10;
-const brickOffsetTop = 30;
+const brickOffsetTop = 100;
 const brickOffsetLeft = 35;
 
 let bricks = [];
@@ -60,7 +62,7 @@ let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
 let bombs = [];          // 폭탄들을 저장할 배열
 
 const gateStageCount = 4; //이산수학 게이트 스테이지 수(마지막은 회로)
-const statusMap = { 
+const statusMap = {
     "T":    { color: "#48dd57", effectFunc: tfHit },
     "F":    { color: "#d74e1d", effectFunc: tfHit },
     "NOT":  { color: "#555555", effectFunc: notHit },
@@ -83,21 +85,32 @@ restartBtn.forEach((item)=>{
         initGame();
     });
 });// 다시 시작 버튼 클릭 시 게임 초기화
+
+// UI 통합 관리 함수 //원하는 화면만 키는 함수
+let currentActiveScreen = null;
+function switchScreen(screenToDisplay, displayStyle = "flex") {
+    //현재 켜져 있는 화면 끔
+    if (currentActiveScreen) {
+        currentActiveScreen.style.display = "none";
+    }
+    //새로운 화면 킴 
+    if (screenToDisplay) {
+        screenToDisplay.style.display = displayStyle;
+    }
+    currentActiveScreen = screenToDisplay; // 킨 화면 저장
+}
 mainBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{
-        mainScreen.style.display = "flex";
-        gameOverScreen.style.display = "none";
-        gameClearScreen.style.display = "none";
+        switchScreen(mainScreen); // 메인 화면
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         resizeGame(600,400);
     });
 });//메인으로 가는 버튼
 nextBtn.addEventListener("click",initGame); // 다음 단계 버튼 클릭 시 다음 단계 진행
 canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
-startNewGameBtn.addEventListener("click", () => { //게임 시작 이벤트
-      mainScreen.style.display = "none"; 
+startNewGameBtn.addEventListener("click", () => { 
       currentStage = 0; 
-      stageSelectModal.style.display = "flex";
+      switchScreen(stageSelectModal); //변경
 });
 stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
       btn.addEventListener("click", (e) => {
@@ -114,15 +127,14 @@ stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
   });
 //닫기 버튼 addevent
 closeStageBtn.addEventListener("click", ()=>{
-    stageSelectModal.style.display = "none";
-    mainScreen.style.display = "flex";
+    switchScreen(mainScreen); // 닫고 메인 화면으로
 });
 difficultyBtn.addEventListener("click", () => {
       difficultyModal.style.display = "flex";
   });
-  closeDifficultyBtn.addEventListener("click", () => {
-      difficultyModal.style.display = "none";
-  });
+closeDifficultyBtn.addEventListener("click", () => {
+    difficultyModal.style.display = "none";
+});
 
   // 난이도 버튼 클릭 시 동적 변경
 diffItemBtns.forEach(btn => {
@@ -130,8 +142,8 @@ diffItemBtns.forEach(btn => {
         // 기존에 선택된 active클래스를 삭제, 현재 클릭한 버튼에 부여
         const level = e.currentTarget.getAttribute("value");
         const selectLevel = diff[level];
-        // targetPaddleWidth = config.paddle; //환경변수 통일 후 사용
-        // gameSpeed = config.speed;
+        //targetPaddleWidth = config.paddle; //환경변수 통일 후 사용
+        //ballSpeed = config.speed;
         // bombProb = config.bomb;
         diffItemBtns.forEach(b => b.classList.remove("active"));
         e.currentTarget.classList.add("active");
@@ -229,18 +241,7 @@ function cheatKeyHandler(e) {
             } else if (b.realType === "BOSS" && b.status !== 0) {
                 
                 // 💡 치트키로 잠금이 풀릴 때도 웅장하게 거대화!
-                if (b.status === "LOCK") {
-                    let expandWidth = brickWidth * 2;
-                    let expandHeight = brickWidth * 2;
-                    
-                    b.x = b.x + (b.width / 2) - (expandWidth / 2);
-                    b.y = b.y + (b.height / 2) - (expandHeight / 2);
-                    b.width = expandWidth;
-                    b.height = expandHeight;
-                    
-                    if (b.tempData) b.color = b.tempData.color;
-                }
-                
+                b.expand() //메소드 사용
                 b.hp = 15;
                 b.status = 1;
             }
@@ -324,8 +325,11 @@ class Brick {
         if (this.status !== 0) {
             //statusMap에 없으면 baseSetting color로
             const currentStyle = statusMap[this.status] || { color: this.color };
+            //블럭 고유의 크기가 있으면 그걸 쓰도록 수정
+            const drawWidth = this.width || brickWidth;
+            const drawHeight = this.height || brickHeight;
             ctx.beginPath();
-            ctx.rect(this.x, this.y, brickWidth, brickHeight);
+            ctx.rect(this.x, this.y, drawWidth, drawHeight);
             ctx.fillStyle = currentStyle.color; //currentStyle로 변경
             ctx.fill();
             ctx.closePath();
@@ -338,7 +342,7 @@ class Brick {
                 ctx.textBaseline = "middle";
 
                 // 블록의 정중앙 좌표를 계산하여 텍스트 쓰기
-                ctx.fillText(this.text, this.x + brickWidth / 2, this.y + brickHeight / 2);
+                ctx.fillText(this.text, this.x + drawWidth / 2, this.y + drawHeight / 2);
             }
         }
     }
@@ -383,39 +387,47 @@ class BossBrick extends Brick {
         if (this.status === 0) return;
 
         // 계층이 아직 열리지 않았으면 검정색으로
-        ctx.beginPath();
-        ctx.rect(this.x, this.y, this.width, this.height);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.closePath();
-
-        let displayText = this.text || "";
-        
-        if (displayText !== "") {
-            ctx.fillStyle = "#FFFFFF";
-            ctx.font = "bold 12px 'Galmuri11', sans-serif"; 
-            ctx.textAlign = "center";   
-            ctx.textBaseline = "middle";
-            ctx.fillText(displayText, this.x + this.width / 2, this.y + this.height / 2);
-        }
-
-        // 3. 체력바는 오직 BOSS 타입에게만 허락
+        super.draw(ctx); //똑같은거 써서 super로 받아쓰는 거로 변경
         if (this.realType === "BOSS" && this.status === 1 && this.hp > 0) {
-            const barWidth = this.width - 10; 
-            const barHeight = 4;              
-            const barX = this.x + 5;
-            const barY = this.y + 3;
+            this.drawHealthBar(ctx);
+        }
+    }
 
-            ctx.fillStyle = "#FF0000";
-            ctx.fillRect(barX, barY, barWidth, barHeight);
+    drawHealthBar(ctx) { //체력바 따로 뺌
+        const barWidth = this.width - 10; 
+        const barHeight = 4;              
+        const barX = this.x + 5;
+        const barY = this.y + 3;
 
-            const currentWidth = (this.hp / this.maxHp) * barWidth;
-            ctx.fillStyle = "#00FF00";
-            ctx.fillRect(barX, barY, currentWidth, barHeight);
+        // 배경(빨간색)
+        ctx.fillStyle = "#FF0000";
+        ctx.fillRect(barX, barY, barWidth, barHeight);
 
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1;
-            ctx.strokeRect(barX, barY, barWidth, barHeight);
+        // 현재 체력(초록색)
+        const currentWidth = (this.hp / this.maxHp) * barWidth;
+        ctx.fillStyle = "#00FF00";
+        ctx.fillRect(barX, barY, currentWidth, barHeight);
+
+        // 테두리(검은색)
+        ctx.strokeStyle = "#000000";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barX, barY, barWidth, barHeight);
+    }
+
+    expand() { //보스 커지는거
+        if (this.realType === "BOSS" && this.status === "LOCK") {
+            let expandWidth = brickWidth * 2;
+            let expandHeight = brickHeight * 2; // (수정됨: 기존 코드는 brickWidth*2 였음)
+            
+            this.x = this.x + (this.width / 2) - (expandWidth / 2);
+            this.y = this.y + (this.height / 2) - (expandHeight / 2);
+            this.width = expandWidth;
+            this.height = expandHeight;
+
+            if (this.tempData) this.color = this.tempData.color;
+            this.status = 1;
+
+            this.text = this.realText;
         }
     }
 }
@@ -468,42 +480,10 @@ class Stage4Brick extends Brick {
     draw(ctx) {
         if (this.status === 0) return;
 
-        // 계층이 아직 열리지 않았으면 검정색으로
-        ctx.beginPath();
-        ctx.rect(this.x, this.y, this.width, this.height);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.closePath();
-
         // 스택/큐의 타입과 남은 원소 배열 상태를 동적으로 텍스트로 렌더링
-        let displayText = `${this.dsType.toUpperCase()} [${this.elements.join(", ")}]`;
+        this.text = `${this.dsType.toUpperCase()} [${this.elements.join(", ")}]`;
         
-        if (displayText !== "") {
-            ctx.fillStyle = "#FFFFFF";
-            ctx.font = "bold 12px 'Galmuri11', sans-serif"; 
-            ctx.textAlign = "center";   
-            ctx.textBaseline = "middle";
-            ctx.fillText(displayText, this.x + this.width / 2, this.y + this.height / 2);
-        }
-
-        // 3. 체력바는 오직 BOSS 타입에게만 허락
-        if (this.realType === "BOSS" && this.status === 1 && this.hp > 0) {
-            const barWidth = this.width - 10; 
-            const barHeight = 4;              
-            const barX = this.x + 5;
-            const barY = this.y + 3;
-
-            ctx.fillStyle = "#FF0000";
-            ctx.fillRect(barX, barY, barWidth, barHeight);
-
-            const currentWidth = (this.hp / this.maxHp) * barWidth;
-            ctx.fillStyle = "#00FF00";
-            ctx.fillRect(barX, barY, currentWidth, barHeight);
-
-            ctx.strokeStyle = "#000000";
-            ctx.lineWidth = 1;
-            ctx.strokeRect(barX, barY, barWidth, barHeight);
-        }
+        super.draw(ctx); //보스 체력바 부분 삭제
     }
 }
 const diff = { //난이도 객체
@@ -583,6 +563,36 @@ function nextDialogue() {
 
 //==== 스테이지들 ======
 //스테이지 별로 맵 로드
+function createGrid(rows, cols, startX, startY, callback) { //맵생성 함수
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            let brickX = startX + c * (brickWidth + brickPadding);
+            let brickY = startY + r * (brickHeight + brickPadding);
+            
+            // 계산된 좌표와 인덱스(r, c)를 전달하여 개별 로직을 실행
+            callback(r, c, brickX, brickY);
+        }
+    }
+}
+function StageClear() { //클리어 제어 분리
+    if (currentStage === 1) { // 이산수학 미니 스테이지의 경우
+        clearCount++;
+        
+        if (clearCount < gateStageCount) {                           
+            bricks = [];
+            brokenBricksCount = 0;
+            totalBricks = 0;
+            
+            resetBallAndPaddle(); // 공, 패들 위치 초기화
+            loadDiscreteStage(); // 다음 미니 스테이지/보스 로드
+            return;
+        } else {
+            clearCount = 0;
+        }
+    }
+    // 그 외 일반 스테이지 완전 클리어 시
+    clearGame();
+}
 function showStage() { //스테이지 선택 화면
     stageSelectModal.style.display = "flex";
     gameOverScreen.style.display = "none";
@@ -620,40 +630,26 @@ function loadStage(stageIndex){
     }
 }
 function loadTutorialStage(){
-    // 벽돌 배열 기본 생성 (최초 1회) // 미리 X,Y 계산해서 객체 생성하도록 변경 
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
     canvas.style.backgroundImage = "url(./testImg/CProgramming.png)";
-    for(let c = 0; c < brickColumnCount; c++) {
-        for(let r = 0; r < brickRowCount; r++) {
-            let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
-            let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
-
-            //bricks를 2차원->1차원 배열로 변경
-            if(r == brickRowCount-1 && c == 2){ // 마지막행 3열에 테스트용 투명화 블록 생성
-                bricks.push(new Brick(brickX, brickY, {color: "#000000", effectFunc:()=>setBallOpacity(0.2)}));
-                totalBricks++;
-                continue;
-            }
-
-            if(r==brickRowCount-4&&c==1){
-                bricks.push(new Brick(brickX, brickY, {color: "blue",effectFunc:subBarsize})); //함수 자체를 줘야함
-                totalBricks++;
-
-                continue;
-            }
-
-            if(r==brickRowCount-2&&c==3){
-                bricks.push(new Brick(brickX, brickY, {color: "purple",effectFunc:addBarsize}));
-                totalBricks++;
-                continue;
-            }
-
-            bricks.push(new Brick(brickX, brickY, {color: colors[r]})); //클래스로 생성
-            totalBricks++;
+    // createGrid 사용
+    createGrid(brickRowCount, brickColumnCount, brickOffsetLeft, brickOffsetTop, (r, c, brickX, brickY) => {
+        if(r == brickRowCount-1 && c == 2){ 
+            bricks.push(new Brick(brickX, brickY, {color: "#000000", effectFunc:()=>setBallOpacity(0.2)}));
         }
-    }
+        else if(r == brickRowCount-4 && c == 1){
+            bricks.push(new Brick(brickX, brickY, {color: "blue", effectFunc:subBarsize})); 
+        }
+        else if(r == brickRowCount-2 && c == 3){
+            bricks.push(new Brick(brickX, brickY, {color: "purple", effectFunc:addBarsize}));
+        }
+        else {
+            bricks.push(new Brick(brickX, brickY, {color: colors[r]})); 
+        }
+        totalBricks++;
+    });
 }
 
 
@@ -662,15 +658,12 @@ function loadTutorialStage(){
 //===================================================
 // 게임 초기화 및 재시작 함수
 function initGame() {
-    x = canvas.width / 2;
-    y = canvas.height - 30;
-    const speed = 5; //속도지정
-    const startAngle = Math.random()*Math.PI / 4;  //처음 발사될때의 각도 지정
-    // 속도와 각도로 dx, dy를 계산
-    dx = speed * Math.sin(startAngle);
-    dy = -speed * Math.cos(startAngle);
+    //기존 게임 루프 끄기
+    if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+    }
 
-    paddleX = (canvas.width - paddleWidth) / 2;
+    resetBallAndPaddle();
     brokenBricksCount = 0;
     isGameOver = false;
     isGameStarted = true;
@@ -685,12 +678,10 @@ function initGame() {
     resizeGame(600,400); //화면 사이즈 조정
 
     // UI 숨기고 그리기 시작
-    questBox.style.display = "none";
-    gameClearScreen.style.display = "none";
-    gameOverScreen.style.display = "none";
-    
+    switchScreen(); // 변경
+
     loadStage(currentStage);
-    draw();
+    loop();
 }
 
 //=== 기능 함수들(tutorial) ===
@@ -734,7 +725,7 @@ function endGame(message) {
     isGameOver = true;
     isGameStarted = false;
     gameOverMessage.innerText = message;
-    gameOverScreen.style.display = "flex"; // 오버레이 화면 표시
+    switchScreen(gameOverScreen); // 오버레이 화면 표시 //변경
 }
 // 게임 클리어 처리 함수, currentstage++ 과 최대 도달 스테이지 갱신
 function clearGame(){
@@ -743,9 +734,17 @@ function clearGame(){
     isCleared = true;
     currentStage++;
     if (currentStage > maxStage) maxStage = currentStage;
-    gameClearScreen.style.display = "flex";
+    switchScreen(gameClearScreen); //변경
 }
 
+function resetBallAndPaddle() { //공, 패들 리셋 함수
+    x = canvas.width / 2;
+    y = canvas.height - 30;
+    const startAngle = Math.random() * Math.PI / 4; 
+    dx = ballSpeed * Math.sin(startAngle);
+    dy = -ballSpeed * Math.cos(startAngle);
+    paddleX = (canvas.width - paddleWidth) / 2;
+}
 // 충돌 감지 함수
 // === 무결점 물리 엔진 (1프레임 1충돌, 끼임 방지 및 정밀한 모서리 반사 적용) ===
 function collisionDetection() {
@@ -823,28 +822,7 @@ function collisionDetection() {
 
                 // 클리어 조건 검사
                 if(brokenBricksCount >= totalBricks) {
-                    
-                    if (currentStage === 1) {//이산수학 미니 스테이지
-                        clearCount++;
-                        
-                        if (clearCount < gateStageCount) {                           
-                            bricks = [];
-                            brokenBricksCount = 0;
-                            totalBricks = 0;
-                            // 공, 패들위치 초기화
-                            x = canvas.width / 2;
-                            y = canvas.height - 30;
-                            const speed = 5; 
-                            const startAngle = Math.random() * Math.PI / 4;  
-                            dx = speed * Math.sin(startAngle);
-                            dy = -speed * Math.cos(startAngle);
-                            paddleX = (canvas.width - paddleWidth) / 2;
-
-                            loadDiscreteStage();
-                            return;
-                        }else clearCount = 0;
-                    }
-                    clearGame();
+                    StageClear(); //함수 분리
                 }
             }
         }
@@ -915,8 +893,6 @@ function updateBall(){
         // [수정됨] 공의 중심(x)이 아니라, 테두리(ballRadius)가 닿았을 때도 충돌로 인정합니다.
         if(x > paddleX - ballRadius && x < paddleX + paddleWidth + ballRadius) {
             
-            let speed = Math.sqrt(dx * dx + dy * dy);
-            
             let hitPoint = x - (paddleX + paddleWidth / 2);
             // [수정됨] 확장된 히트박스 비율에 맞춰 정규화 분모도 넓혀줍니다.
             let normalizedHit = hitPoint / ((paddleWidth / 2) + ballRadius);
@@ -926,8 +902,8 @@ function updateBall(){
             
             let bounceAngle = normalizedHit * (Math.PI / 3); 
             
-            dx = speed * Math.sin(bounceAngle);
-            dy = -speed * Math.cos(bounceAngle); 
+            dx = ballSpeed * Math.sin(bounceAngle);
+            dy = -ballSpeed * Math.cos(bounceAngle); 
         }
     }
     
@@ -959,7 +935,7 @@ function updateBombs() {
 }
 
 // 메인 게임 루프
-function draw() {
+function loop() { //draw 이름이 겹쳐서 loop로 변경
     // 게임 오버 상태면 그리기 루프 중단
     if (isGameOver) return; 
 
@@ -980,7 +956,7 @@ function draw() {
 
     // 충돌 감지 직후 승리하여 isGameOver가 true로 바뀌었다면 진행 멈춤
     if (isGameOver) return; 
-    requestAnimationFrame(draw);
+    animationId = requestAnimationFrame(loop);
 }
 
 //==== 이산수학 스테이지 기능 구현중 ====
@@ -1101,6 +1077,8 @@ function randomBossMap() {
 }
 function loadDiscreteStage() {
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
+    resizeGame(700, 500);
+
     const map = randomDiscreteMap();
     const brickRowCount = map.length;
     const brickColumnCount = map[0].length;
@@ -1111,21 +1089,13 @@ function loadDiscreteStage() {
     let confirmBlock = null;
     let finalOutputBlock = null;
 
-    // 객체 생성 후 grid 에 저장
-    for (let r = 0; r < brickRowCount; r++) {
-        for (let c = 0; c < brickColumnCount; c++) {
-            let blockStatus = map[r][c];
-
-            if (blockStatus === 0) continue;
-
-            let brickX = (c * (brickWidth + brickPadding)) + brickOffsetLeft;
-            let brickY = (r * (brickHeight + brickPadding)) + brickOffsetTop;
-            
-            // grid에 객체 저장
+    // 객체 생성 후 grid 에 저장 //createGrid 활용
+    createGrid(brickRowCount, brickColumnCount, brickOffsetLeft, brickOffsetTop, (r, c, brickX, brickY) => {
+        let blockStatus = map[r][c];
+        if (blockStatus !== 0) {
             grid[r][c] = new Brick(brickX, brickY, { status: blockStatus });
-
         }
-    }
+    });
     //grid 인덱스 기반으로 게이트에 입출력 참조설정
     for (let r = 0; r < brickRowCount; r++) {
         for (let c = 0; c < brickColumnCount; c++) {
@@ -1329,89 +1299,80 @@ function loadOopStage() {
         });
     }
 
-    // 2. 자바스크립트 객체 인스턴스화
-    for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-            let bData = blockGrid[r][c];
-            if (!bData) continue;
+    // 2. 자바스크립트 객체 인스턴스화 //createGrid 활용
+    createGrid(rows, cols, startX, startY, (r, c, brickX, brickY) => {
+        let bData = blockGrid[r][c];
+        if (!bData) return; // for문의 continue 대신 콜백의 return 사용
 
-            let brickX = startX + c * (brickWidth + brickPadding);
-            let brickY = startY + r * (brickHeight + brickPadding);
+        let initialStatus = (bData.layer === 4) ? 1 : "LOCK"; 
+        let initialColor  = (bData.layer === 4) ? bData.color : "#222222"; 
+        let initialText   = bData.text;
 
-            let initialStatus = (bData.layer === 4) ? 1 : "LOCK"; 
-            let initialColor  = (bData.layer === 4) ? bData.color : "#222222"; 
-            let initialText   = bData.text; 
+        let effect = () => {
+            const destroyTarget = (targetLayer, targetType) => {
+                let target = bricks.find(b => b.layer === targetLayer && b.realType === targetType && b.status !== 0);
+                if (target) {
+                    target.status = 0; 
+                    brokenBricksCount++; 
+                }
+            };
 
-            let effect = () => {
-                const destroyTarget = (targetLayer, targetType) => {
-                    let target = bricks.find(b => b.layer === targetLayer && b.realType === targetType && b.status !== 0);
-                    if (target) {
-                        target.status = 0; 
-                        brokenBricksCount++; 
-                    }
-                };
+            if (bData.type === "public_W") destroyTarget(bData.layer, "private_W");
+            if (bData.type === "public_X") destroyTarget(bData.layer, "private_X");
+            if (bData.type === "public_Y") destroyTarget(bData.layer, "private_Y");
+            if (bData.type === "public_Z") destroyTarget(bData.layer, "private_Z");
 
-                if (bData.type === "public_W") destroyTarget(bData.layer, "private_W");
-                if (bData.type === "public_X") destroyTarget(bData.layer, "private_X");
-                if (bData.type === "public_Y") destroyTarget(bData.layer, "private_Y");
-                if (bData.type === "public_Z") destroyTarget(bData.layer, "private_Z");
+            if (bData.type === "protected_getK") destroyTarget(2, "protected_K");
+            if (bData.type === "protected_getB") destroyTarget(2, "protected_B");
 
-                if (bData.type === "protected_getK") destroyTarget(2, "protected_K");
-                if (bData.type === "protected_getB") destroyTarget(2, "protected_B");
-
-                let remainingBlocks = bricks.filter(b => b.layer === bData.layer && b.status === 1).length;
-                
-                if (remainingBlocks === 0 && bData.layer > 1) {
-                    bricks.forEach(b => {
-                        if (b.layer === bData.layer - 1 && b.status === "LOCK") {
+            let remainingBlocks = bricks.filter(b => b.layer === bData.layer && b.status === 1).length;
+            
+            if (remainingBlocks === 0 && bData.layer > 1) {
+                bricks.forEach(b => {
+                    if (b.layer === bData.layer - 1 && b.status === "LOCK") {
+                        // ★ 핵심: 보스와 일반 블록의 길을 완벽히 나눕니다!
+                        if (b.realType === "BOSS") {
+                            // 보스라면 expand() 내부에서 스스로 상태(1)와 글씨(BOSS), 크기를 모두 바꿉니다.
+                            b.expand(); 
+                        } else {
+                            // 일반 블록이라면 기존처럼 밖에서 상태와 색상, 글씨를 바꿉니다.
                             b.status = 1; 
                             if (b.tempData) {
                                 b.color = b.tempData.color; 
                             }
-                            
-                            // 보스의 잠금이 풀렸다면, 그때 크기를 2배로 확장!
-                            if (b.realType === "BOSS") {
-                                let expandWidth = brickWidth * 2;
-                                let expandHeight = brickWidth * 2;
-                                
-                                // 중심점 유지를 위해 좌표 보정
-                                b.x = b.x + (b.width / 2) - (expandWidth / 2);
-                                b.y = b.y + (b.height / 2) - (expandHeight / 2);
-                                
-                                b.width = expandWidth;
-                                b.height = expandHeight;
-                            }
+                            b.text = b.realText; 
                         }
-                    });
-                }
-
-                if (bData.type === "BOSS") {
-                    let currentBoss = bricks.find(b => b.realType === "BOSS");
-                    if (currentBoss) {
-                        spawnBomb(currentBoss.x + currentBoss.width / 2, currentBoss.y + currentBoss.height / 2);
+                        
                     }
+                });
+            }
+
+            if (bData.type === "BOSS") {
+                let currentBoss = bricks.find(b => b.realType === "BOSS");
+                if (currentBoss) {
+                    spawnBomb(currentBoss.x + currentBoss.width / 2, currentBoss.y + currentBoss.height / 2);
                 }
-            };
+            }
+        };
 
-            // 처음엔 모두 기본 너비(brickWidth), 기본 높이(brickHeight)로 얌전하게 생성
-            let newBrick = new BossBrick(brickX, brickY, {
-                status: initialStatus,
-                color: initialColor,
-                text: initialText,
-                realText: bData.text, 
-                realType: bData.type,
-                layer: bData.layer,
-                effectFunc: effect,
-                hp: bData.hp,
-                indestructible: bData.indestructible
-            });
+        // 처음엔 모두 기본 너비(brickWidth), 기본 높이(brickHeight)로 얌전하게 생성
+        let newBrick = new BossBrick(brickX, brickY, {
+            status: initialStatus,
+            color: initialColor,
+            text: initialText,
+            realText: bData.text, 
+            realType: bData.type,
+            layer: bData.layer,
+            effectFunc: effect,
+            hp: bData.hp,
+            indestructible: bData.indestructible
+        });
 
-            newBrick.tempData = { color: bData.color };
+        newBrick.tempData = { color: bData.color };
 
-            bricks.push(newBrick);
-            totalBricks++; 
-        }
-    }
+        bricks.push(newBrick);
+        totalBricks++; 
+    });
 }
 
 //점심시간 스테이지
@@ -1525,5 +1486,5 @@ function loadDSStage4(treeDepth = 4) {
 function loadWebprogrammingStage(){}
 
 
-//최초 실행
-initGame();
+//최초 실행시 메인화면
+switchScreen(mainScreen);
