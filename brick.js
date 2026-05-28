@@ -16,6 +16,11 @@
 // ==========================================
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+let ballSkinType = "default";   // 공 이미지 변수 default, img, rgb 
+let paddleSkinType = "default"; // 패들 이미지 변수 default, img, rgb 
+let ballImage = null; //이미지 주소 변수
+let paddleImage = null;
+let rgb = 0; // 공 rgb 조절 값
 
 // UI 요소 가져오기
 const gameOverScreen = document.getElementById("gameOverScreen");
@@ -34,6 +39,12 @@ const difficultyBtn = document.getElementById("difficultyBtn");
 const difficultyModal = document.getElementById("difficultyModal");
 const closeDifficultyBtn = document.getElementById("closeDifficultyBtn");
 const diffItemBtns = document.querySelectorAll(".diff-item-btn");
+const optionBtn = document.getElementById("optionBtn");
+const optionModal = document.getElementById("optionSelectModal");
+const closeOptionBtn = document.getElementById("closeOptionBtn");
+const ballSkinSelect = document.getElementById("ballSkinSelect");
+const paddleSkinSelect = document.getElementById("paddleSkinSelect");
+
 
 // 게임 루프 및 흐름 제어 변수
 let animationId = null; // 애니메이션 루프 ID를 저장할 변수
@@ -523,20 +534,54 @@ function updateCircuits() {
 // 5. 화면 렌더링 (그리기 전담 함수들)
 // ==========================================
 function drawBall() {
-    ctx.beginPath();
-    ctx.arc(x, y, ballRadius, 0, Math.PI*2);
-    ctx.fillStyle = `rgba(255, 0, 0, ${ballOpacity})`; // RGBA를 사용하여 투명도 적용
-    ctx.fill();
-    ctx.closePath();
+
+    if (ballSkinType === "image" && ballImage) {
+        // 야구공, 농구공, 축구공 
+        ctx.drawImage(ballImage, x - ballRadius, y - ballRadius, ballRadius * 2, ballRadius * 2);
+    } 
+    else if (ballSkinType === "rgb") {
+        // RGB
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = `hsl(${rgb}, 100%, 50%)`; 
+        ctx.fill();
+        ctx.closePath();
+    }
+    else{
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255, 0, 0, ${ballOpacity})`; // RGBA를 사용하여 투명도 적용
+        ctx.fill();
+        ctx.closePath();
+    }
+    
 }
 
 function drawPaddle() {
-    ctx.beginPath();
-    ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-    ctx.fillStyle = "#000000"; 
-    ctx.fill();
-    ctx.closePath();
-
+    if (paddleSkinType === "image" && paddleImage) {
+        // 나무, 금속, 우레탄 
+        ctx.drawImage(paddleImage, paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+    } 
+    else if (paddleSkinType === "rgb") {
+        // RGB 
+        let gradient = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
+        gradient.addColorStop(0, `hsl(${rgb}, 100%, 50%)`);
+        gradient.addColorStop(1, `hsl(${(rgb + 60) % 360}, 100%, 50%)`);
+        
+        ctx.beginPath();
+        ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        ctx.closePath();
+    }
+    else{
+        ctx.beginPath();
+        ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+        ctx.fillStyle = "#000000"; 
+        ctx.fill();
+        ctx.closePath();
+    }
+    
     //패들에 글씨출력 부분
     ctx.fillStyle = "#FFFFFF"; // 글씨 색상
     ctx.font = "bold 12px 'Galmuri11', sans-serif"; // 기존 사용 중인 폰트 
@@ -908,10 +953,7 @@ function switchScreen(screenToDisplay, displayStyle = "flex") {
     if (screenToDisplay) screenToDisplay.style.display = displayStyle;
     currentActiveScreen = screenToDisplay; 
 }
-function showStage() { //스테이지 선택 화면
-    stageSelectModal.style.display = "flex";
-    gameOverScreen.style.display = "none";
-}
+
 
 // 대화 관련 함수
 function startScene(sceneName) {
@@ -1036,15 +1078,21 @@ mainBtn.forEach((item)=>{
         switchScreen(mainScreen); // 메인 화면
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         resizeGame(600,400);
+        canvas.style.backgroundImage = "";
     });
 });
-nextBtn.addEventListener("click",initGame); 
-startNewGameBtn.addEventListener("click", () => { currentStage = 0; switchScreen(stageSelectModal); });
-closeStageBtn.addEventListener("click", ()=>{ switchScreen(mainScreen); });
-difficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "flex"; });
-closeDifficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "none"; });
+nextBtn.addEventListener("click",initGame); //다음으로 버튼
+startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
+    currentStage = 0; 
+    switchScreen(stageSelectModal); 
+    stageItemBtns.forEach(btn => { //선택가능한 스테이지 목록 갱신
+        if(maxStage >= Number(btn.value)) btn.classList.remove("disable");
+    });});
+closeStageBtn.addEventListener("click", ()=>{ switchScreen(mainScreen); }); //스테이지 창 닫기
+difficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "flex"; }); //난이도 창 열기
+closeDifficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "none"; }); //난이도 창 닫기
 
-stageItemBtns.forEach(btn => { 
+stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
     btn.addEventListener("click", (e) => {
         let selectedStage = parseInt(e.target.getAttribute("value"));
         stageSelectModal.style.display = "none";
@@ -1053,7 +1101,7 @@ stageItemBtns.forEach(btn => {
         initGame();
     });
 });
-diffItemBtns.forEach(btn => {
+diffItemBtns.forEach(btn => { //난이도 변경 이벤트
     btn.addEventListener("click", (e) => {
         const level = e.currentTarget.getAttribute("value");
         const selectLevel = diff[level];
@@ -1063,6 +1111,37 @@ diffItemBtns.forEach(btn => {
         e.currentTarget.classList.add("active");
         console.log(`난이도 변경 완료! 현재 속도: ${ballSpeed}, 패들 크기: ${targetPaddleWidth}`);
     });
+});
+optionBtn.addEventListener("click",()=>{ //옵션창 열기
+    switchScreen(optionModal);
+});
+closeOptionBtn.addEventListener("click",()=>{ //옵션창 닫기
+    switchScreen(mainScreen);
+})
+ballSkinSelect.addEventListener("change", (e) => { //공 이미지 선택 이벤트
+    const val = e.target.value;
+    if (val === "default") {
+        ballSkinType = "default";
+    } else if (val === "rgb") {
+        ballSkinType = "rgb";
+    } else {
+        ballSkinType = "image";
+        ballImage = new Image();
+        ballImage.src = val; // 야구공, 농구공, 축구공 이미지 로드
+    }
+});
+
+paddleSkinSelect.addEventListener("change", (e) => { //패들 이미지 선택 이벤트
+    const val = e.target.value;
+    if (val === "default") {
+        paddleSkinType = "default";
+    } else if (val === "rgb") {
+        paddleSkinType = "rgb";
+    } else {
+        paddleSkinType = "image";
+        paddleImage = new Image();
+        paddleImage.src = val; // 나무, 금속, 우레탄 바 이미지 로드
+    }
 });
 
 
@@ -1130,6 +1209,8 @@ function loop() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    rgb = (rgb + 1.5) % 360; //공 rgb값 변경
+
     drawBricks();
     drawBall();
     drawPaddle();
