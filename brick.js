@@ -228,7 +228,13 @@ class BossBrick extends Brick {
         this.isIndestructible = option.indestructible || false; 
         
         this.realText = option.realText || option.text || ""; 
-        this.realType = option.realType || ""; // 객체 타입 식별용 은닉 변수
+        this.realType = option.realType || ""; 
+
+        //  이미지 경로가 옵션으로 들어오면 Image 객체 생성!
+        if (option.imageSrc) {
+            this.image = new Image();
+            this.image.src = option.imageSrc;
+        }
     }
 
     onHit() {
@@ -250,8 +256,31 @@ class BossBrick extends Brick {
     draw(ctx) {
         if (this.status === 0) return;
 
-        // 계층이 아직 열리지 않았으면 검정색으로
-        super.draw(ctx); //똑같은거 써서 super로 받아쓰는 거로 변경
+        const drawWidth = this.width || brickWidth;
+        const drawHeight = this.height || brickHeight;
+        
+        // 이미지가 있고 로딩이 완료되었다면 이미지를 출력!
+        if (this.image && this.image.complete) {
+            ctx.drawImage(this.image, this.x, this.y, drawWidth, drawHeight);
+        } else {
+            // 이미지가 없거나 로딩 전이면 기존처럼 색상 사각형 출력
+            ctx.beginPath();
+            ctx.rect(this.x, this.y, drawWidth, drawHeight);
+            ctx.fillStyle = this.color; 
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // 상태가 "LOCK"이더라도 자신의 고유 텍스트를 출력
+        if (this.text !== "") {
+            ctx.fillStyle = "#FFFFFF";
+            ctx.font = "bold 14px 'Galmuri11', sans-serif"; 
+            ctx.textAlign = "center";   
+            ctx.textBaseline = "middle";
+            ctx.fillText(this.text, this.x + drawWidth / 2, this.y + drawHeight / 2);
+        }
+
+        // 보스 체력바 렌더링
         if (this.realType === "BOSS" && this.status === 1 && this.hp > 0) {
             this.drawHealthBar(ctx);
         }
@@ -451,7 +480,7 @@ function updateBall(){
 function updatePaddle(){ //함수화
     let previousWidth = paddleWidth; 
     paddleWidth += (targetPaddleWidth - paddleWidth) * 0.016; 
-   
+
     paddleX =paddleX- (paddleWidth - previousWidth) / 2;
 
     if (paddleX + paddleWidth > canvas.width) {
@@ -627,13 +656,13 @@ function loadStage(stageIndex){
 
     //stageIndexdp 따라 함수를 호출
     switch(stageIndex){
-        case 0: loadTutorialStage(); break;
-        case 1: loadDiscreteStage(); break;
-        case 2: loadOopStage(); break;
-        case 3: loadLunchStage(); break;
-        case 4: loadDSStage4(); break;
-        case 5: loadWebprogrammingStage(); break;
-        default: endGame("모든 스테이지를 클리어했습니다! 최종 승리!"); break;
+    case 0: loadTutorialStage(); break;
+    case 1: loadDiscreteStage(); break;
+    case 2: loadOopStage(); break;
+    case 3: loadLunchStage(); break;
+    case 4: loadDSStage4(); break;
+    case 5: loadWebprogrammingStage(); break;
+    default: endGame("모든 스테이지를 클리어했습니다! 최종 승리!"); break;
     }
 }
 
@@ -940,7 +969,118 @@ function loadDSStage4(treeDepth = 4) {
 }
 
 // === 스테이지 5: 웹프로그래밍 ===
-function loadWebprogrammingStage(){}
+function loadWebprogrammingStage(){
+    // canvas.style.backgroundImage = "url(./testImg/Web.png)"; // 배경 이미지 (필요시 변경)
+    if (typeof resizeGame === 'function') {
+        resizeGame(800, 600);
+    }
+    
+    currentWebPhase = 1; // 페이즈 초기화
+    
+    // 2. 대망의 1페이즈 (프론트엔드 파트) 함수 호출!
+    loadWebPhase1();  
+
+
+}
+
+// ---------------------------------------------------------
+//  Phase 1
+// ---------------------------------------------------------
+function loadWebPhase1() {
+    bricks = []; bombs = []; brokenBricksCount = 0; 
+    totalBricks = 9999; // 💡 메인 루프 간섭 방지용
+    resetBallAndPaddle(); 
+
+    console.log("웹 프로그래밍 1페이즈: HTML 시작");
+
+    bricks = []; bombs = []; brokenBricksCount = 0; totalBricks = 9999;
+    resetBallAndPaddle(); 
+
+    let feBoss = new BossBrick(350, 100, { 
+        // 💡 1페이즈 전용 프론트엔드 보스 이미지 삽입
+ //       imageSrc: "./testImg/fe_boss.png", 
+        color: "#E44D26", text: "HTML UI", hp: 1, realType: "BOSS",
+        effectFunc: () => { checkWebPhaseClear(); } 
+    });
+    // 프론트엔드 보스 크기를 키우고 싶다면?
+    feBoss.width = 120;
+    feBoss.height = 80;
+    bricks.push(feBoss);
+
+    // 참고용: 팀원이 일반 방어벽(잡몹)을 추가하고 싶다면 이렇게 Brick을 쓰면 됩니다.
+    // let normalWall = new Brick(350, 200, { color: "#F7DF1E", text: "CSS" });
+    // bricks.push(normalWall);
+}
+
+// ---------------------------------------------------------
+//  Phase 2  
+// ---------------------------------------------------------
+function loadWebPhase2() {
+    bricks = []; bombs = []; brokenBricksCount = 0; 
+    totalBricks = 0;
+    resetBallAndPaddle();
+
+    console.log("웹 프로그래밍 2페이즈: JS가동");
+
+    let beBoss = new BossBrick(350, 100, { 
+        // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
+   //     imageSrc: "./testImg/be_boss.png", 
+        color: "#2ECC71", text: "Node.js API", hp: 50, realType: "BOSS",
+        effectFunc: () => { checkWebPhaseClear(); } 
+    });
+    beBoss.width = 140;
+    beBoss.height = 90;
+    bricks.push(beBoss);    
+
+    totalBricks++;
+}
+
+// ---------------------------------------------------------
+//  Phase 3
+// ---------------------------------------------------------
+function loadWebPhase3() {
+    bricks = []; bombs = []; brokenBricksCount = 0; 
+    totalBricks = 0; // 💡 3페이즈는 정상 카운팅으로 복구
+    resetBallAndPaddle();
+
+    console.log("웹 프로그래밍 2페이즈: JS가동");
+
+    let dbBoss = new BossBrick(350, 100, { 
+        // 💡 3페이즈 전용 데이터베이스 최종 보스 이미지 삽입
+      //  imageSrc: "./testImg/db_boss.png", 
+        color: "#34495E", text: "MySQL DB", hp: 10, realType: "BOSS",
+        effectFunc: () => { checkWebPhaseClear(); } 
+    });
+    dbBoss.width = 160;
+    dbBoss.height = 100;
+    bricks.push(dbBoss);
+    
+    totalBricks++;
+}
+
+function checkWebPhaseClear() {
+    // 1. 현재 맵에 존재하는 블록 중 진짜 보스("BOSS" 태그)를 찾습니다.
+    let boss = bricks.find(b => b.realType === "BOSS");
+
+    // 보스가 존재하고, 그 보스의 상태가 0(파괴됨)일 때만 무조건 통과!
+    // (일반 방어벽이 몇 개가 남아있든 완전히 무시합니다)
+    if (boss && boss.status === 0) {
+        currentWebPhase++; // 페이즈 1 증가
+        
+        if (currentWebPhase === 2) {
+            // 1초 대기 후 2페이즈 로딩 (연출용 여백)
+            setTimeout(loadWebPhase2, 1000); 
+        } 
+        else if (currentWebPhase === 3) {
+            // 1초 대기 후 3페이즈 로딩
+            setTimeout(loadWebPhase3, 1000);
+        } 
+        else {
+            // 3페이즈(최종 DB 보스)까지 다 깼다면 진짜 스테이지 완전 클리어!
+            setTimeout(StageClear, 1000);
+        }
+    }
+}
 
 
 // ==========================================
@@ -971,10 +1111,10 @@ function showDialogue() {
       const currentLine = currentScript[currentIndex];
       speakerEl.innerText = currentLine.speaker;
       dialogueEl.innerText = currentLine.text;
-    } else {
+  } else {
       if(isGameOver) handleSceneEnd();
       else handleGameStart();
-    }
+  }
 }
 function handleGameStart() {
     if (questBox) {
@@ -1056,7 +1196,7 @@ window.addEventListener("keydown", (e) => {
     if (e.key === ' ' || e.key === 'Enter') { //스페이스나 엔터로 다음 창 진행
       if (e.key === ' ') e.preventDefault(); //스페이스로 화면 내려가기 방지
       nextDialogue();
-    }
+  }
 });
 
 window.addEventListener("load", () => {
@@ -1065,9 +1205,9 @@ window.addEventListener("load", () => {
     if (dialogueBox) {
       dialogueBox.addEventListener("click", (e) => { if (e.button === 0) nextDialogue(); });
       console.log("대화창 클릭 이벤트 연결");
-    } else {
+  } else {
       console.error("HTML에서 'quest-box' ID를 찾을 수 없습니다. HTML 코드를 확인해주세요.");
-    }
+  }
 });
 
 restartBtn.forEach((item)=>{
