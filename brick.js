@@ -79,6 +79,7 @@ let maxStage = 0;        // 최대 진행 스테이지 변수
 let clearCount = 0;      // 이산수학 미니 스테이지 클리어 수
 let brokenBricksCount = 0; // 부순 벽돌 개수
 let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
+let paddleHitCount = 0;  // 패들에 공이 부딪힌 횟수(cost)
 
 
 // ==========================================
@@ -454,6 +455,7 @@ function checkPaddleCollision() {
             dx = ballSpeed * Math.sin(bounceAngle);
             dy = -ballSpeed * Math.cos(bounceAngle); 
         }
+        paddleHitCount++;
     }
 }
 
@@ -619,7 +621,7 @@ function drawPaddle() {
 
     const textX = paddleX + (paddleWidth / 2);
     const textY = (canvas.height - paddleHeight) + (paddleHeight / 2);
-    ctx.fillText(`count : ${brokenBricksCount}`, textX, textY);
+    ctx.fillText(`cost : ${paddleHitCount}`, textX, textY);
 }
 
 function drawBricks() { //Brick class에 draw 메소드 이용해 변경 //1차원 틀로 변경
@@ -652,7 +654,7 @@ function createGrid(rows, cols, startX, startY, callback) {
 
 function loadStage(stageIndex){
     //화면, 카운트 초기화
-    bricks = []; brokenBricksCount = 0; totalBricks = 0; bombs = []; 
+    bricks = []; brokenBricksCount = 0; totalBricks = 0; bombs = []; paddleHitCount = 0;
 
     //stageIndexdp 따라 함수를 호출
     switch(stageIndex){
