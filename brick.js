@@ -44,7 +44,9 @@ const optionModal = document.getElementById("optionSelectModal");
 const closeOptionBtn = document.getElementById("closeOptionBtn");
 const ballSkinSelect = document.getElementById("ballSkinSelect");
 const paddleSkinSelect = document.getElementById("paddleSkinSelect");
-
+const dialogueArea = document.getElementById("dialogueArea");
+const gameStartArea = document.getElementById("gameStartArea");
+const startBtn = document.getElementById("startBtn");
 
 // 게임 루프 및 흐름 제어 변수
 let animationId = null; // 애니메이션 루프 ID를 저장할 변수
@@ -113,8 +115,11 @@ const diff = { //난이도 객체
 let allStoryData = {"lunchTime": [
     { "speaker": "나", "text": "샘플 텍스트~" },
     { "speaker": "나", "text": "이거 다 끝나도 아직은 안넘어가요" },
-    { "speaker": "나", "text": "정상이니까 k로 스테이지 넘겨주세요" }
-]}; 
+    { "speaker": "나", "text": "정상이니까 k로 스테이지 넘겨주세요" }],
+    "sample":[
+    { "speaker": "나", "text": "샘플 텍스트~" },
+    { "speaker": "나", "text": "샘플 야호~" }
+    ]}; 
 let currentScript = ["sampleText"]; 
 let currentIndex = 0;
 
@@ -568,7 +573,14 @@ function drawBall() {
 
     if (ballSkinType === "image" && ballImage) {
         // 야구공, 농구공, 축구공 
+        ctx.save(); 
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
         ctx.drawImage(ballImage, x - ballRadius, y - ballRadius, ballRadius * 2, ballRadius * 2);
+        
+        ctx.restore();
     } 
     else if (ballSkinType === "rgb") {
         // RGB
@@ -589,10 +601,85 @@ function drawBall() {
 }
 
 function drawPaddle() {
-    if (paddleSkinType === "image" && paddleImage) {
-        // 나무, 금속, 우레탄 
-        ctx.drawImage(paddleImage, paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+    const startY = canvas.height - paddleHeight; // 스킨용 변수
+    if (paddleSkinType === "wood"){
+        let woodGrad = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
+        woodGrad.addColorStop(0.0, "#8B5A2B");
+        woodGrad.addColorStop(0.3, "#CD853F"); 
+        woodGrad.addColorStop(0.5, "#DEB887");
+        woodGrad.addColorStop(0.7, "#CD853F");
+        woodGrad.addColorStop(1.0, "#8B5A2B");
+
+        ctx.beginPath();
+        ctx.rect(paddleX, startY, paddleWidth, paddleHeight);
+        ctx.fillStyle = woodGrad;
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(74, 43, 14, 0.4)";
+        ctx.lineWidth = 1.5;
+        
+        ctx.beginPath();
+        ctx.moveTo(paddleX, startY + (paddleHeight * 0.3));
+        ctx.lineTo(paddleX + paddleWidth, startY + (paddleHeight * 0.3));
+        ctx.moveTo(paddleX, startY + (paddleHeight * 0.7));
+        ctx.lineTo(paddleX + paddleWidth, startY + (paddleHeight * 0.7));
+        ctx.stroke();
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#5C3A21";
+        ctx.stroke();
+        ctx.closePath();
+    }
+    else if (paddleSkinType === "steel") {
+        // 금속
+        const endY = canvas.height;
+        let metalGrad = ctx.createLinearGradient(0, startY, 0, endY);
+        
+        metalGrad.addColorStop(0.0, "#ffffff"); 
+        metalGrad.addColorStop(0.15, "#d0d5db");
+        metalGrad.addColorStop(0.45, "#737a85"); 
+        metalGrad.addColorStop(0.5, "#ffffff"); 
+        metalGrad.addColorStop(0.55, "#9097a1");
+        metalGrad.addColorStop(0.85, "#4a5059");
+        metalGrad.addColorStop(1.0, "#1a1c20"); 
+
+        ctx.beginPath();
+        ctx.rect(paddleX, startY, paddleWidth, paddleHeight);
+        ctx.fillStyle = metalGrad;
+        ctx.fill();
+        
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#b0b5bc";
+        ctx.stroke();
+        ctx.closePath();
     } 
+    else if (paddleSkinType === "uretan"){
+        let urethaneGrad = ctx.createLinearGradient(0, startY, 0, canvas.height);
+        urethaneGrad.addColorStop(0.0, "#27ae60"); 
+        urethaneGrad.addColorStop(0.5, "#1e7e43"); 
+        urethaneGrad.addColorStop(1.0, "#14522c"); 
+
+        ctx.beginPath();
+        ctx.roundRect(paddleX, startY, paddleWidth, paddleHeight, 6); 
+        ctx.fillStyle = urethaneGrad;
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.12)"; 
+        for (let i = 4; i < paddleWidth - 4; i += 6) {
+            ctx.fillRect(paddleX + i, startY + 4, 1.5, 1.5);
+            ctx.fillRect(paddleX + i + 2, startY + paddleHeight - 6, 1.5, 1.5);
+        }
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+        for (let i = 7; i < paddleWidth - 4; i += 6) {
+            ctx.fillRect(paddleX + i, startY + 7, 1.5, 1.5);
+        }
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(40, 180, 99, 0.3)"; 
+        ctx.stroke();
+        ctx.closePath();
+    }
     else if (paddleSkinType === "rgb") {
         // RGB 
         let gradient = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
@@ -653,6 +740,7 @@ function createGrid(rows, cols, startX, startY, callback) {
 }
 
 function loadStage(stageIndex){
+    
     //화면, 카운트 초기화
     bricks = []; brokenBricksCount = 0; totalBricks = 0; bombs = []; paddleHitCount = 0;
 
@@ -664,12 +752,13 @@ function loadStage(stageIndex){
     case 3: loadLunchStage(); break;
     case 4: loadDSStage4(); break;
     case 5: loadWebprogrammingStage(); break;
-    default: endGame("모든 스테이지를 클리어했습니다! 최종 승리!"); break;
+    default: endGame("모든 스테이지를 클리어했습니다!"); break;
     }
 }
 
 // === 스테이지 0: 튜토리얼 ===
 function loadTutorialStage(){
+    startScene("sample");
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
@@ -737,6 +826,7 @@ function randomBossMap() {
 }
 
 function loadDiscreteStage() {
+    startScene("sample");
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
     resizeGame(700, 500);
 
@@ -779,6 +869,7 @@ function loadDiscreteStage() {
 
 // === 스테이지 2: 객체지향 ===
 function loadOopStage() {
+    startScene("sample");
     canvas.style.backgroundImage = "url(./testImg/Oop.png)";
     if (typeof resizeGame === 'function') resizeGame(800, 600);
 
@@ -912,6 +1003,7 @@ function loadLunchStage(){
 
 // === 스테이지 4: 자료구조 ===
 function loadDSStage4(treeDepth = 4) {
+    startScene("sample");
     canvas.style.backgroundImage = "url(./testImg/Ds.png)";
     if (typeof resizeGame === 'function') resizeGame(1280, 800); 
     
@@ -972,6 +1064,7 @@ function loadDSStage4(treeDepth = 4) {
 
 // === 스테이지 5: 웹프로그래밍 ===
 function loadWebprogrammingStage(){
+    startScene("sample");
     // canvas.style.backgroundImage = "url(./testImg/Web.png)"; // 배경 이미지 (필요시 변경)
     if (typeof resizeGame === 'function') {
         resizeGame(800, 600);
@@ -1101,6 +1194,8 @@ function switchScreen(screenToDisplay, displayStyle = "flex") {
 function startScene(sceneName) {
     isGameStarted = false; // 대화가 시작되면 물리엔진을 멈춤
     questBox.style.display = "block";
+    dialogueArea.style.display = "block";
+    gameStartArea.style.display = "none";
     currentScript = allStoryData[sceneName]; 
     currentIndex = 0; 
     showDialogue(); 
@@ -1119,9 +1214,8 @@ function showDialogue() {
   }
 }
 function handleGameStart() {
-    if (questBox) {
-        questBox.innerHTML = "<p>게임이 시작됩니다!</p><button id='startBtn'>시작</button>";
-        const startBtn = document.getElementById("startBtn");
+        dialogueArea.style.display = "none";  // 대화 UI 숨기기
+        gameStartArea.style.display = "block";
         if (startBtn) {
             startBtn.addEventListener('click', () => {
                 questBox.style.display = 'none';
@@ -1129,7 +1223,6 @@ function handleGameStart() {
                 isGameStarted = true; // 시작 버튼을 눌러야 물리 엔진 작동 시작
             });
         }
-    }
 }
 function handleSceneEnd() {
     if(questBox) questBox.style.display = 'none';
@@ -1199,6 +1292,10 @@ window.addEventListener("keydown", (e) => {
       if (e.key === ' ') e.preventDefault(); //스페이스로 화면 내려가기 방지
       nextDialogue();
   }
+});
+startBtn.addEventListener('click', () => {
+            questBox.style.display = 'none';
+            isGameStarted = true; // 스테이지 시작
 });
 
 window.addEventListener("load", () => {
@@ -1275,15 +1372,7 @@ ballSkinSelect.addEventListener("change", (e) => { //공 이미지 선택 이벤
 
 paddleSkinSelect.addEventListener("change", (e) => { //패들 이미지 선택 이벤트
     const val = e.target.value;
-    if (val === "default") {
-        paddleSkinType = "default";
-    } else if (val === "rgb") {
-        paddleSkinType = "rgb";
-    } else {
-        paddleSkinType = "image";
-        paddleImage = new Image();
-        paddleImage.src = val; // 나무, 금속, 우레탄 바 이미지 로드
-    }
+    paddleSkinType = val;
 });
 
 
