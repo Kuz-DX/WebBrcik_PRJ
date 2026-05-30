@@ -566,7 +566,14 @@ function drawBall() {
 
     if (ballSkinType === "image" && ballImage) {
         // 야구공, 농구공, 축구공 
+        ctx.save(); 
+        ctx.beginPath();
+        ctx.arc(x, y, ballRadius, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
         ctx.drawImage(ballImage, x - ballRadius, y - ballRadius, ballRadius * 2, ballRadius * 2);
+        
+        ctx.restore();
     } 
     else if (ballSkinType === "rgb") {
         // RGB
@@ -587,10 +594,85 @@ function drawBall() {
 }
 
 function drawPaddle() {
-    if (paddleSkinType === "image" && paddleImage) {
-        // 나무, 금속, 우레탄 
-        ctx.drawImage(paddleImage, paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
+    const startY = canvas.height - paddleHeight; // 스킨용 변수
+    if (paddleSkinType === "wood"){
+        let woodGrad = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
+        woodGrad.addColorStop(0.0, "#8B5A2B");
+        woodGrad.addColorStop(0.3, "#CD853F"); 
+        woodGrad.addColorStop(0.5, "#DEB887");
+        woodGrad.addColorStop(0.7, "#CD853F");
+        woodGrad.addColorStop(1.0, "#8B5A2B");
+
+        ctx.beginPath();
+        ctx.rect(paddleX, startY, paddleWidth, paddleHeight);
+        ctx.fillStyle = woodGrad;
+        ctx.fill();
+
+        ctx.strokeStyle = "rgba(74, 43, 14, 0.4)";
+        ctx.lineWidth = 1.5;
+        
+        ctx.beginPath();
+        ctx.moveTo(paddleX, startY + (paddleHeight * 0.3));
+        ctx.lineTo(paddleX + paddleWidth, startY + (paddleHeight * 0.3));
+        ctx.moveTo(paddleX, startY + (paddleHeight * 0.7));
+        ctx.lineTo(paddleX + paddleWidth, startY + (paddleHeight * 0.7));
+        ctx.stroke();
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#5C3A21";
+        ctx.stroke();
+        ctx.closePath();
+    }
+    else if (paddleSkinType === "steel") {
+        // 금속
+        const endY = canvas.height;
+        let metalGrad = ctx.createLinearGradient(0, startY, 0, endY);
+        
+        metalGrad.addColorStop(0.0, "#ffffff"); 
+        metalGrad.addColorStop(0.15, "#d0d5db");
+        metalGrad.addColorStop(0.45, "#737a85"); 
+        metalGrad.addColorStop(0.5, "#ffffff"); 
+        metalGrad.addColorStop(0.55, "#9097a1");
+        metalGrad.addColorStop(0.85, "#4a5059");
+        metalGrad.addColorStop(1.0, "#1a1c20"); 
+
+        ctx.beginPath();
+        ctx.rect(paddleX, startY, paddleWidth, paddleHeight);
+        ctx.fillStyle = metalGrad;
+        ctx.fill();
+        
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "#b0b5bc";
+        ctx.stroke();
+        ctx.closePath();
     } 
+    else if (paddleSkinType === "uretan"){
+        let urethaneGrad = ctx.createLinearGradient(0, startY, 0, canvas.height);
+        urethaneGrad.addColorStop(0.0, "#27ae60"); 
+        urethaneGrad.addColorStop(0.5, "#1e7e43"); 
+        urethaneGrad.addColorStop(1.0, "#14522c"); 
+
+        ctx.beginPath();
+        ctx.roundRect(paddleX, startY, paddleWidth, paddleHeight, 6); 
+        ctx.fillStyle = urethaneGrad;
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(0, 0, 0, 0.12)"; 
+        for (let i = 4; i < paddleWidth - 4; i += 6) {
+            ctx.fillRect(paddleX + i, startY + 4, 1.5, 1.5);
+            ctx.fillRect(paddleX + i + 2, startY + paddleHeight - 6, 1.5, 1.5);
+        }
+        
+        ctx.fillStyle = "rgba(255, 255, 255, 0.15)";
+        for (let i = 7; i < paddleWidth - 4; i += 6) {
+            ctx.fillRect(paddleX + i, startY + 7, 1.5, 1.5);
+        }
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(40, 180, 99, 0.3)"; 
+        ctx.stroke();
+        ctx.closePath();
+    }
     else if (paddleSkinType === "rgb") {
         // RGB 
         let gradient = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
@@ -1273,15 +1355,7 @@ ballSkinSelect.addEventListener("change", (e) => { //공 이미지 선택 이벤
 
 paddleSkinSelect.addEventListener("change", (e) => { //패들 이미지 선택 이벤트
     const val = e.target.value;
-    if (val === "default") {
-        paddleSkinType = "default";
-    } else if (val === "rgb") {
-        paddleSkinType = "rgb";
-    } else {
-        paddleSkinType = "image";
-        paddleImage = new Image();
-        paddleImage.src = val; // 나무, 금속, 우레탄 바 이미지 로드
-    }
+    paddleSkinType = val;
 });
 
 
