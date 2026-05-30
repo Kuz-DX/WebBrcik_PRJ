@@ -44,7 +44,9 @@ const optionModal = document.getElementById("optionSelectModal");
 const closeOptionBtn = document.getElementById("closeOptionBtn");
 const ballSkinSelect = document.getElementById("ballSkinSelect");
 const paddleSkinSelect = document.getElementById("paddleSkinSelect");
-
+const dialogueArea = document.getElementById("dialogueArea");
+const gameStartArea = document.getElementById("gameStartArea");
+const startBtn = document.getElementById("startBtn");
 
 // 게임 루프 및 흐름 제어 변수
 let animationId = null; // 애니메이션 루프 ID를 저장할 변수
@@ -112,8 +114,11 @@ const diff = { //난이도 객체
 let allStoryData = {"lunchTime": [
     { "speaker": "나", "text": "샘플 텍스트~" },
     { "speaker": "나", "text": "이거 다 끝나도 아직은 안넘어가요" },
-    { "speaker": "나", "text": "정상이니까 k로 스테이지 넘겨주세요" }
-]}; 
+    { "speaker": "나", "text": "정상이니까 k로 스테이지 넘겨주세요" }],
+    "sample":[
+    { "speaker": "나", "text": "샘플 텍스트~" },
+    { "speaker": "나", "text": "샘플 야호~" }
+    ]}; 
 let currentScript = ["sampleText"]; 
 let currentIndex = 0;
 
@@ -733,6 +738,7 @@ function createGrid(rows, cols, startX, startY, callback) {
 }
 
 function loadStage(stageIndex){
+    
     //화면, 카운트 초기화
     bricks = []; brokenBricksCount = 0; totalBricks = 0; bombs = []; 
 
@@ -744,12 +750,13 @@ function loadStage(stageIndex){
     case 3: loadLunchStage(); break;
     case 4: loadDSStage4(); break;
     case 5: loadWebprogrammingStage(); break;
-    default: endGame("모든 스테이지를 클리어했습니다! 최종 승리!"); break;
+    default: endGame("모든 스테이지를 클리어했습니다!"); break;
     }
 }
 
 // === 스테이지 0: 튜토리얼 ===
 function loadTutorialStage(){
+    startScene("sample");
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
@@ -817,6 +824,7 @@ function randomBossMap() {
 }
 
 function loadDiscreteStage() {
+    startScene("sample");
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
     resizeGame(700, 500);
 
@@ -859,6 +867,7 @@ function loadDiscreteStage() {
 
 // === 스테이지 2: 객체지향 ===
 function loadOopStage() {
+    startScene("sample");
     canvas.style.backgroundImage = "url(./testImg/Oop.png)";
     if (typeof resizeGame === 'function') resizeGame(800, 600);
 
@@ -992,6 +1001,7 @@ function loadLunchStage(){
 
 // === 스테이지 4: 자료구조 ===
 function loadDSStage4(treeDepth = 4) {
+    startScene("sample");
     canvas.style.backgroundImage = "url(./testImg/Ds.png)";
     if (typeof resizeGame === 'function') resizeGame(1280, 800); 
     
@@ -1052,6 +1062,7 @@ function loadDSStage4(treeDepth = 4) {
 
 // === 스테이지 5: 웹프로그래밍 ===
 function loadWebprogrammingStage(){
+    startScene("sample");
     // canvas.style.backgroundImage = "url(./testImg/Web.png)"; // 배경 이미지 (필요시 변경)
     if (typeof resizeGame === 'function') {
         resizeGame(800, 600);
@@ -1181,6 +1192,8 @@ function switchScreen(screenToDisplay, displayStyle = "flex") {
 function startScene(sceneName) {
     isGameStarted = false; // 대화가 시작되면 물리엔진을 멈춤
     questBox.style.display = "block";
+    dialogueArea.style.display = "block";
+    gameStartArea.style.display = "none";
     currentScript = allStoryData[sceneName]; 
     currentIndex = 0; 
     showDialogue(); 
@@ -1199,9 +1212,8 @@ function showDialogue() {
   }
 }
 function handleGameStart() {
-    if (questBox) {
-        questBox.innerHTML = "<p>게임이 시작됩니다!</p><button id='startBtn'>시작</button>";
-        const startBtn = document.getElementById("startBtn");
+        dialogueArea.style.display = "none";  // 대화 UI 숨기기
+        gameStartArea.style.display = "block";
         if (startBtn) {
             startBtn.addEventListener('click', () => {
                 questBox.style.display = 'none';
@@ -1209,7 +1221,6 @@ function handleGameStart() {
                 isGameStarted = true; // 시작 버튼을 눌러야 물리 엔진 작동 시작
             });
         }
-    }
 }
 function handleSceneEnd() {
     if(questBox) questBox.style.display = 'none';
@@ -1279,6 +1290,10 @@ window.addEventListener("keydown", (e) => {
       if (e.key === ' ') e.preventDefault(); //스페이스로 화면 내려가기 방지
       nextDialogue();
   }
+});
+startBtn.addEventListener('click', () => {
+            questBox.style.display = 'none';
+            isGameStarted = true; // 스테이지 시작
 });
 
 window.addEventListener("load", () => {
