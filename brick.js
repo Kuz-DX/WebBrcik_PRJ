@@ -78,11 +78,16 @@ const brickOffsetLeft = 35;
 let bricks = [];
 let bombs = [];          // 폭탄들을 저장할 배열
 let currentStage = 0;    // 현재 진행 중인 스테이지 번호
-let maxStage = 0;        // 최대 진행 스테이지 변수
+let maxStage = 5;        // 최대 진행 스테이지 변수
 let clearCount = 0;      // 이산수학 미니 스테이지 클리어 수
 let brokenBricksCount = 0; // 부순 벽돌 개수
 let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
 let paddleHitCount = 0;  // 패들에 공이 부딪힌 횟수(cost)
+let currentWebPhase = 0; // 웹 프로그래밍 페이즈 관리 변수
+let playerHp = 3;        // 플레이어 체력 변수
+let specialBalls = [];   // 특수공 배열
+let specialBallTimer = 0; // 특수공 생성 타이머
+let bossBombTimer = 0;   // 보스 폭탄 생성 타이머
 
 
 // ==========================================
@@ -166,7 +171,15 @@ class Bomb { //폭탄배열
         
         // 바닥에 닿으면 게임 오버
         if (this.y + this.radius > canvas.height) {
-            endGame("폭탄이 바닥에 떨어졌습니다. 게임 오버!");
+            // 2페이즈에서는 게임오버 대신 체력 감소
+            if (currentStage === 5 && currentWebPhase === 2) {
+                playerHp--;
+                if (playerHp <= 0) {
+                    endGame("체력이 모두 소진되었습니다. 게임 오버!");
+                }
+            } else {
+                endGame("폭탄이 바닥에 떨어졌습니다. 게임 오버!");
+            }
             this.isActive = false;
         }
     }
@@ -189,7 +202,7 @@ class Brick {
         Object.assign(this, baseSettings, option);
     }
 
-    onHit() { //블록 쳤을때 기능 함수 실행 //status 맵 활용 추가
+    onHit(damage = 1) { //블록 쳤을때 기능 함수 실행 //status 맵 활용 추가
         const currentFunc = statusMap[this.status]?.effectFunc || this.effectFunc;
 
         // ★ 핵심: 함수를 실행할 때 'this'가 무조건 현재 벽돌을 가리키도록 강제합니다.
@@ -249,14 +262,15 @@ class BossBrick extends Brick {
         }
     }
 
-    onHit() {
+    onHit(damage = 1) {
         if (this.status === "LOCK") return; 
         if (this.isIndestructible) return; // private 블록 무적 방어
 
         if (this.status === 1) {
-            this.hp--; 
+            this.hp -= damage; 
             // hit 할 수 있는 상황이라면 생명력이 감소
             if (this.hp <= 0) {
+                this.hp = 0;
                 // 생명력이 0보다 작아지면 hit되므로 감소
                 this.status = 0;
                 brokenBricksCount++; 
@@ -354,7 +368,7 @@ class Stage4Brick extends Brick {
         this.height = brickHeight;
     }
 
-    onHit() {
+    onHit(damage = 1) {
         if (this.status === "LOCK") return; 
 
         const currentFunc = statusMap[this.status] || {effectFunc: this.effectFunc};
@@ -387,6 +401,133 @@ class Stage4Brick extends Brick {
         this.text = `${this.dsType.toUpperCase()} [${this.elements.join(", ")}]`;
         
         super.draw(ctx); //보스 체력바 부분 삭제
+    }
+}
+
+class SpecialBall {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 20; // 기본공 12보다 큼
+        this.color = "#3498DB"; // 파랑색
+        
+        let rand = Math.random();
+        if (rand < 0.5) {
+            this.text = "팀플";
+            this.damage = 10;
+        } else {
+            this.text = "과제";
+            this.damage = 20;
+        }
+        
+        // 보스 아래에서 시작해서 떨어짐
+        this.dx = (Math.random() - 0.5) * 3; // x축 속도 랜덤
+        this.dy = 3; // y축 아래로
+        this.isActive = true;
+    }
+    
+    draw(ctx) {
+        if (!this.isActive) return;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+        
+        ctx.fillStyle = "#FFFFFF";
+        ctx.font = "bold 12px 'Galmuri11', sans-serif";
+        ctx.textAlign = "center";   
+        ctx.textBaseline = "middle";
+        ctx.fillText(this.text, this.x, this.y);
+    }
+    
+    update() {
+        if (!this.isActive) return;
+        
+        // 벽 충돌 (튕기기)
+        if (this.x + this.dx > canvas.width - this.radius || this.x + this.dx < this.radius) {
+            this.dx = -this.dx;
+        }
+        if (this.y + this.dy < this.radius) {
+            this.dy = -this.dy;
+        }
+        
+        // 패들 충돌
+        if(this.y + this.dy > canvas.height - this.radius - paddleHeight) {
+            if(this.x > paddleX - this.radius && this.x < paddleX + paddleWidth + this.radius) {
+                let hitPoint = this.x - (paddleX + paddleWidth / 2);
+                let normalizedHit = hitPoint / ((paddleWidth / 2) + this.radius);
+                normalizedHit = Math.max(-1, Math.min(1, normalizedHit));
+                let bounceAngle = normalizedHit * (Math.PI / 3); 
+                
+                let speed = Math.max(ballSpeed * 0.8, Math.hypot(this.dx, this.dy));
+                this.dx = speed * Math.sin(bounceAngle);
+                this.dy = -speed * Math.cos(bounceAngle); 
+                this.y = canvas.height - paddleHeight - this.radius;
+            }
+        }
+        
+        // 바닥 충돌 (소멸) - "튕기지못하고 바닥에 떨어지면 그냥 소멸해"
+        if (this.y + this.dy > canvas.height - this.radius) {
+            this.isActive = false;
+        }
+        
+        this.x += this.dx;
+        this.y += this.dy;
+        
+        this.checkCollision();
+    }
+    
+    checkCollision() {
+        let hasCollidedThisFrame = false; 
+
+        for(let i = 0; i < bricks.length; i++) {
+            if (hasCollidedThisFrame) break; 
+            let b = bricks[i];
+            
+            if(b.status !== 0) { 
+                let currentWidth = b.width || brickWidth;
+                let currentHeight = b.height || brickHeight;
+                let closestX = Math.max(b.x, Math.min(this.x, b.x + currentWidth));
+                let closestY = Math.max(b.y, Math.min(this.y, b.y + currentHeight));
+                let distanceX = this.x - closestX;
+                let distanceY = this.y - closestY;
+                let distanceSquared = (distanceX * distanceX) + (distanceY * distanceY);
+
+                if (distanceSquared < (this.radius * this.radius)) {
+                    hasCollidedThisFrame = true; 
+                    
+                    let prevX = this.x - this.dx;
+                    let prevY = this.y - this.dy;
+                    let hitTopOrBottom = (prevY <= b.y || prevY >= b.y + currentHeight);
+                    let hitLeftOrRight = (prevX <= b.x || prevX >= b.x + currentWidth);
+
+                    if (hitTopOrBottom && !hitLeftOrRight) {
+                        this.dy = -this.dy; 
+                        this.y = (prevY <= b.y) ? b.y - this.radius : b.y + currentHeight + this.radius;
+                    } else if (hitLeftOrRight && !hitTopOrBottom) {
+                        this.dx = -this.dx; 
+                        this.x = (prevX <= b.x) ? b.x - this.radius : b.x + currentWidth + this.radius;
+                    } else {
+                        let distance = Math.sqrt(distanceSquared);
+                        if (distance === 0) {
+                            this.dx = -this.dx; this.dy = -this.dy;
+                        } else {
+                            let nx = distanceX / distance; let ny = distanceY / distance;
+                            let dotProduct = (this.dx * nx) + (this.dy * ny);
+                            this.dx = this.dx - 2 * dotProduct * nx; this.dy = this.dy - 2 * dotProduct * ny;
+                            this.x = closestX + nx * this.radius; this.y = closestY + ny * this.radius;
+                        }
+                    }
+                    
+                    b.onHit(this.damage); 
+                    
+                    if (b.realType === "BOSS") {
+                        this.isActive = false;
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -448,7 +589,7 @@ function collisionDetection() {
                 // [역할 2] 물리 반사 (새로 만든 함수 호출)
                 applyBrickPhysics(b, closestX, closestY, distanceSquared, distanceX, distanceY);
                 // [역할 3] 타격 처리
-                b.onHit(); 
+                b.onHit(1); 
             }
         }
     }
@@ -479,9 +620,14 @@ function updateBall(){
     // 2. 패들 충돌
     checkPaddleCollision();
     
-    // 3. 바닥 충돌 (게임오버)
+    // 3. 바닥 충돌 (게임오버 방지 및 체력 감소)
     if(y + dy > canvas.height - ballRadius) {
-        endGame("바닥에 닿았습니다. 게임 오버!");
+        playerHp--;
+        if (playerHp <= 0) {
+            endGame("체력이 모두 소진되었습니다. 게임 오버!");
+        } else {
+            resetBallAndPaddle();
+        }
         return;
     }
     // 4. 이동 적용
@@ -503,9 +649,57 @@ function updatePaddle(){ //함수화
 
 // 폭탄 업데이트 함수
 function updateBombs() {
+    // 웹프로그래밍 2페이즈 보스 폭탄 투하 패턴 (4초마다)
+    if (currentStage === 5 && currentWebPhase === 2) {
+        let boss = bricks.find(b => b.realType === "BOSS");
+        if (boss && boss.status !== 0) {
+            bossBombTimer += 16;
+            if (bossBombTimer >= 4000) {
+                spawnBomb(boss.x + boss.width / 2, boss.y + boss.height);
+                bossBombTimer = 0;
+            }
+        }
+    }
+
     for(let i = 0; i < bombs.length; i++) {
         bombs[i].update();
     }
+}
+
+// 특수공 업데이트 함수
+function updateSpecialBalls() {
+    // 3초마다 특수공 스폰 확인 (웹프로그래밍 스테이지 2페이즈 전용)
+    if (currentStage === 5 && currentWebPhase === 2) {
+        if (specialBalls.length === 0) {
+            specialBallTimer += 16;
+            if (specialBallTimer >= 3000) {
+                spawnSpecialBall();
+                specialBallTimer = 0;
+            }
+        } else {
+            specialBallTimer = 0;
+        }
+    }
+
+    // 특수공 업데이트
+    for (let i = specialBalls.length - 1; i >= 0; i--) {
+        let sb = specialBalls[i];
+        sb.update();
+        if (!sb.isActive) {
+            specialBalls.splice(i, 1);
+        }
+    }
+}
+
+function spawnSpecialBall() {
+    let boss = bricks.find(b => b.realType === "BOSS");
+    let spawnX = canvas.width / 2;
+    let spawnY = canvas.height / 3;
+    if (boss) {
+        spawnX = boss.x + boss.width / 2;
+        spawnY = boss.y + boss.height + 20;
+    }
+    specialBalls.push(new SpecialBall(spawnX, spawnY));
 }
 
 // === 아이템 및 기믹 효과 함수들 ===
@@ -569,6 +763,21 @@ function updateCircuits() {
             b.topOutput.status = res ? "T" : "F";       
         }
     }
+}
+
+function drawSpecialBalls() {
+    for(let i = 0; i < specialBalls.length; i++) {
+        specialBalls[i].draw(ctx);
+    }
+}
+
+function drawPlayerHp() {
+    ctx.fillStyle = "#FF0000";
+    ctx.font = "bold 16px 'Galmuri11', sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    let hpText = "♥".repeat(Math.max(0, playerHp));
+    ctx.fillText(`HP : ${hpText}`, 15, 15);
 }
 
 
@@ -1119,6 +1328,7 @@ function loadWebPhase1() {
 function loadWebPhase2() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
     totalBricks = 0;
+    bossBombTimer = 0;
     resetBallAndPaddle();
 
     console.log("웹 프로그래밍 2페이즈: JS가동");
@@ -1432,6 +1642,10 @@ function initGame() {
     isGameStarted = true;
     isCleared = false;
     ballOpacity = 1.0; // 투명도 초기화
+    playerHp = 3;      // 체력 초기화
+    specialBalls = []; // 특수공 초기화
+    specialBallTimer = 0; // 특수공 생성 타이머 초기화
+    bossBombTimer = 0; // 보스 폭탄 생성 타이머 초기화
     
     if (opacityTimeoutId !== null) {
         clearTimeout(opacityTimeoutId); opacityTimeoutId = null;
@@ -1455,6 +1669,8 @@ function loop() {
     drawBall();
     drawPaddle();
     drawBombs();
+    drawSpecialBalls();
+    drawPlayerHp();
 
     if(isGameStarted){ //게임 시작 시에만 작동
         if(currentStage == 1) updateCircuits(); //이산스테이지 출력 변화
@@ -1462,6 +1678,7 @@ function loop() {
         updateBall();
         updatePaddle();
         updateBombs();
+        updateSpecialBalls();
         if(brokenBricksCount >= totalBricks) StageClear();
     }
     
