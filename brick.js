@@ -26,6 +26,7 @@ let rgb = 0; // 공 rgb 조절 값
 const gameOverScreen = document.getElementById("gameOverScreen");
 const gameOverMessage = document.getElementById("gameOverMessage");
 const gameClearScreen = document.getElementById("gameClearScreen");
+const gamePauseScreen = document.getElementById("gamePauseScreen");
 const mainScreen = document.getElementById("mainScreen");
 const restartBtn = document.querySelectorAll(".restartBtn");
 const mainBtn = document.querySelectorAll(".mainBtn");
@@ -34,6 +35,7 @@ const stageSelectModal = document.getElementById("stageSelectModal");
 const closeStageBtn = document.getElementById("closeStageBtn");
 const stageItemBtns = document.querySelectorAll(".stage-item-btn");
 const nextBtn = document.getElementById("nextBtn");
+const resumeBtn = document.getElementById("resumeBtn");
 const questBox = document.getElementById("quest-box");
 const difficultyBtn = document.getElementById("difficultyBtn");
 const difficultyModal = document.getElementById("difficultyModal");
@@ -111,33 +113,14 @@ const statusMap = {
 };
 
 const diff = { //난이도 객체
-    easy: { paddleWidth : 15, speed : 10, bombProb : 3 },
-    normal: { paddleWidth : 10, speed : 13, bombProb : 10 },
-    gosu : { paddleWidth : 7, speed : 15, bombProb : 12 },
-    goat : { paddleWidth : 5, speed : 20, bombProb : 20 }
+    easy: { paddleWidth : 15, speed : 8, bombProb : 3 },
+    normal: { paddleWidth : 12, speed : 10, bombProb : 10 },
+    gosu : { paddleWidth : 10, speed : 12, bombProb : 12 },
+    goat : { paddleWidth : 7, speed : 15, bombProb : 20 }
 };
 
 //대화창 관련 변수
-let allStoryData = {"lunchTime": [
-    { "speaker": "나", "text": "샘플 텍스트~" },
-    { "speaker": "나", "text": "이거 다 끝나도 아직은 안넘어가요" },
-    { "speaker": "나", "text": "정상이니까 k로 스테이지 넘겨주세요" }],
-    "sample":[
-    { "speaker": "나", "text": "샘플 텍스트~" },
-    { "speaker": "나", "text": "샘플 야호~" }
-    ],
-    "clearSample":[
-    { "speaker": "나", "text": "클리어 텍스트~" },
-    { "speaker": "나", "text": "샘플 야호~" }
-    ],
-    "introSample":[
-    { "speaker": "나", "text": "학교가기 진짜 싫다" ,"layout":"none"},
-    { "speaker": "나", "text": "벌써 집에 가고 싶은데" ,"layout":"white"},
-    { "speaker": "나", "text": "이제 막 9시네" },
-    { "speaker": "나", "text": "오늘 하루도 잘 버텨보자..." },
-    { "speaker": "나", "text": "강의 언제 끝나냐...(╯°□°）╯︵ ┻━┻" , "layout" : "flex"}
-    ]
-}; 
+let allStoryData = {}; 
 let currentScript = ["sampleText"]; 
 let currentIndex = 0;
 
@@ -980,7 +963,7 @@ function loadStage(stageIndex){
 
 // === 스테이지 0: 튜토리얼 ===
 function loadTutorialStage(){
-    startScene("introSample");
+    startScene("intro");
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
@@ -1051,7 +1034,7 @@ function randomBossMap() {
 }
 
 function loadDiscreteStage() {
-    startScene("sample");
+    startScene("startDiscrete");
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
     resizeGame(700, 500);
 
@@ -1094,7 +1077,7 @@ function loadDiscreteStage() {
 
 // === 스테이지 2: 객체지향 ===
 function loadOopStage() {
-    startScene("sample");
+    startScene("startOop");
     canvas.style.backgroundImage = "url(./testImg/Oop.png)";
     if (typeof resizeGame === 'function') resizeGame(800, 600);
 
@@ -1244,7 +1227,7 @@ function loadLunchStage(){
 
 // === 스테이지 4: 자료구조 ===
 function loadDSStage4(treeDepth = 4) {
-    startScene("sample");
+    startScene("startDataStructure");
     canvas.style.backgroundImage = "url(./testImg/Ds.png)";
     if (typeof resizeGame === 'function') resizeGame(1280, 800); 
     
@@ -1305,7 +1288,7 @@ function loadDSStage4(treeDepth = 4) {
 
 // === 스테이지 5: 웹프로그래밍 ===
 function loadWebprogrammingStage(){
-    startScene("sample");
+    startScene("startWebprogramming");
     // canvas.style.backgroundImage = "url(./testImg/Web.png)"; // 배경 이미지 (필요시 변경)
     if (typeof resizeGame === 'function') {
         resizeGame(800, 600);
@@ -1420,7 +1403,7 @@ function loadWebPhase2() {
     resetBallAndPaddle();
 
     console.log("웹 프로그래밍 2페이즈: JS가동");
-
+    startScene("startWebprogammingP2");
     let beBoss = new BossBrick(350, 100, { 
         // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
    //     imageSrc: "./testImg/be_boss.png", 
@@ -1547,6 +1530,7 @@ function handleGameStart() {
         }
 }
 function handleSceneEnd() {
+    if (currentStage == 2) clearGame();
     if(questBox) questBox.style.display = 'none';
     clearBtns.style.visibility = "visible";
 }
@@ -1564,6 +1548,7 @@ function resizeGame(newWidth, newHeight) {
     if(gameContainer) { gameContainer.style.width = newWidth + "px"; gameContainer.style.height = newHeight + "px"; }
     if(gameOverScreen) { gameOverScreen.style.width = newWidth + "px"; gameOverScreen.style.height = newHeight + "px"; }
     if(gameClearScreen){ gameClearScreen.style.width = newWidth + "px"; gameClearScreen.style.height = newHeight + "px"; }
+    if(gamePauseScreen){ gamePauseScreen.style.width = newWidth + "px"; gamePauseScreen.style.height = newHeight + "px"; }
     paddleX = (newWidth - paddleWidth) / 2; // 패들을 새로운 화면 중앙으로 보정
     x = newWidth / 2; y = newHeight - 30;
 }
@@ -1615,6 +1600,10 @@ window.addEventListener("keydown", (e) => {
       if (e.key === ' ') e.preventDefault(); //스페이스로 화면 내려가기 방지
       nextDialogue();
   }
+  if (e.key === 'Escape' && !isGameOver){
+    isGameStarted = false;
+    gamePauseScreen.style.display = "flex";
+  }
 });
 startBtn.addEventListener('click', () => {
             questBox.style.display = 'none';
@@ -1631,20 +1620,36 @@ window.addEventListener("load", () => {
   } else {
       console.error("HTML에서 'quest-box' ID를 찾을 수 없습니다. HTML 코드를 확인해주세요.");
   }
+  loadGameData();
 });
 
+async function loadGameData() { //웹서버 구축 후 사용 예정
+  try {
+    const response = await fetch('./scripts.json'); 
+    if (!response.ok) throw new Error(`HTTP 상태코드: ${response.status}`);
+    
+    allStoryData = await response.json();
+  } catch (error) {
+    console.error("데이터를 불러오는 중 에러 발생:", error);
+  }
+}
 restartBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{ if(isCleared) currentStage--; initGame(); });
 });
 mainBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{
         switchScreen(mainScreen); // 메인 화면
+        gamePauseScreen.style.display = "none";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         resizeGame(600,400);
         canvas.style.backgroundImage = "";
     });
 });
 nextBtn.addEventListener("click",initGame); //다음으로 버튼
+resumeBtn.addEventListener("click",()=>{
+    isGameStarted = true;
+    gamePauseScreen.style.display = "none";
+});
 startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
     currentStage = 0; 
     switchScreen(stageSelectModal); 
@@ -1760,12 +1765,30 @@ function clearGame(){
         scoreDisplay.style.color = gradeColor;
         scoreDisplay.style.display = "block";
     }
-
+    switch(currentStage){
+        case 0:
+            startScene("clearC_programming"); //클리어 대화 출력
+            break;
+        case 1:
+            startScene("clearDiscrete");
+            break;
+        case 2:
+            startScene("clearOop");
+            break;
+        case 3:
+            break;
+        case 4:
+            startScene("clearDataStructure");
+            break;
+        case 5:
+            startScene("ending");
+            break;
+    }
     currentStage++;
     if (currentStage > maxStage) maxStage = currentStage;
     switchScreen(gameClearScreen); 
     clearBtns.style.visibility = "hidden";
-    startScene("clearSample"); //클리어 대화 출력
+    
 }
 
 function resetBallAndPaddle() { //공, 패들 리셋 함수
@@ -1797,6 +1820,7 @@ function initGame() {
     
     resizeGame(600,400); //화면 사이즈 조정
     switchScreen(); // UI 숨기기
+    gamePauseScreen.style.display = "none";
     loadStage(currentStage);
     loop();
 }
