@@ -47,6 +47,7 @@ const paddleSkinSelect = document.getElementById("paddleSkinSelect");
 const dialogueArea = document.getElementById("dialogueArea");
 const gameStartArea = document.getElementById("gameStartArea");
 const startBtn = document.getElementById("startBtn");
+const clearBtns = document.getElementById("clearBtn");
 
 // 게임 루프 및 흐름 제어 변수
 let animationId = null; // 애니메이션 루프 ID를 저장할 변수
@@ -119,7 +120,12 @@ let allStoryData = {"lunchTime": [
     "sample":[
     { "speaker": "나", "text": "샘플 텍스트~" },
     { "speaker": "나", "text": "샘플 야호~" }
-    ]}; 
+    ],
+    "clearSample":[
+    { "speaker": "나", "text": "클리어 텍스트~" },
+    { "speaker": "나", "text": "샘플 야호~" }
+    ]
+}; 
 let currentScript = ["sampleText"]; 
 let currentIndex = 0;
 
@@ -1226,6 +1232,7 @@ function handleGameStart() {
 }
 function handleSceneEnd() {
     if(questBox) questBox.style.display = 'none';
+    clearBtns.style.visibility = "visible";
 }
 function nextDialogue() {
     if (!currentScript || currentScript.length === 0 || isGameStarted) return; // ★ 이미 게임이 시작됐다면 대화창 이벤트 무시 
@@ -1403,6 +1410,8 @@ function clearGame(){
     currentStage++;
     if (currentStage > maxStage) maxStage = currentStage;
     switchScreen(gameClearScreen); 
+    clearBtns.style.visibility = "hidden";
+    startScene("clearSample"); //클리어 대화 출력
 }
 
 function resetBallAndPaddle() { //공, 패들 리셋 함수
