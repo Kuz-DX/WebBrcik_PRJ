@@ -1223,11 +1223,7 @@ function handleGameStart() {
         dialogueArea.style.display = "none";  // 대화 UI 숨기기
         gameStartArea.style.display = "block";
         if (startBtn) {
-            startBtn.addEventListener('click', () => {
-                questBox.style.display = 'none';
-                gameOverScreen.style.display = "none";
-                isGameStarted = true; // 시작 버튼을 눌러야 물리 엔진 작동 시작
-            });
+            
         }
 }
 function handleSceneEnd() {
@@ -1302,6 +1298,7 @@ window.addEventListener("keydown", (e) => {
 });
 startBtn.addEventListener('click', () => {
             questBox.style.display = 'none';
+            gameOverScreen.style.display = "none";
             isGameStarted = true; // 스테이지 시작
 });
 
