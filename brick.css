@@ -43,7 +43,7 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 999;
+    z-index: 100;
 }
 #gameClearScreen {
     position: absolute;
@@ -57,7 +57,25 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 999;
+    z-index: 100;
+}
+#clearMessageContainer {
+    display: flex;
+    align-items: baseline; /* 글씨들의 아래쪽 기준선을 예쁘게 맞춰줍니다 */
+    justify-content: center;
+    gap: 15px; /* '스테이지 클리어!'와 'A+' 사이의 여백 */
+    margin-bottom: 25px; /* 아래 버튼들과의 간격 */
+}
+#gameClearMessage {
+    margin: 0;
+    font-size: 32px; /* 기존 스테이지 클리어 글씨 크기 */
+}
+#scoreDisplay {
+    display: none; 
+    font-size: 54px; /* ★ 학점 글씨를 더 크고 눈에 띄게 확 키웠습니다! */
+    font-weight: bold; 
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
+    /* 이전의 절대위치(absolute)와 회전(rotate) 코드는 모두 삭제되었습니다. */
 }
 
 #gameOverMessage {
@@ -123,14 +141,14 @@ body {
     transform: translateX(-50%);
     width: 540px;
     height: 140px;
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: rgba(0, 0, 0, 1);
     border: 3px solid #ffffff;
     border-radius: 8px;
     padding: 20px;
     box-sizing: border-box;
     color: #fff;
     box-shadow: 0 0 15px rgba(0,0,0,0.5);
-    z-index: 10;   /* 캔버스보다 위에 위치 */
+    z-index: 110;   /* 캔버스보다 위에 위치 */
 }
 
 /* 이름 표시 영역 */
