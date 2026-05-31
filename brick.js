@@ -57,7 +57,7 @@ let currentActiveScreen = null;
 
 // 게임 상태 변수 선언 (공, 패들)
 let x, y, dx, dy, paddleX;
-let ballSpeed = 7; //공속도 변수 이름 통일
+let ballSpeed = 4; //공속도 변수 이름 통일
 let ballOpacity = 1.0; // 공의 투명도
 let opacityTimeoutId = null; // 투명도 복구 타이머 ID 15~16줄
 
@@ -77,7 +77,7 @@ const brickOffsetLeft = 35;
 let bricks = [];
 let bombs = [];          // 폭탄들을 저장할 배열
 let currentStage = 0;    // 현재 진행 중인 스테이지 번호
-let maxStage = 0;        // 최대 진행 스테이지 변수
+let maxStage = 5;        // 최대 진행 스테이지 변수
 let clearCount = 0;      // 이산수학 미니 스테이지 클리어 수
 let brokenBricksCount = 0; // 부순 벽돌 개수
 let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
@@ -762,14 +762,17 @@ function loadTutorialStage(){
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
+    const COLOR_ADDB      = "#E87F24";
+    const COLOR_SUBB      = "#FFC81E";
+    const COLOR_OPACITY   = "#F8C463"
     canvas.style.backgroundImage = "url(./testImg/CProgramming.png)";
     createGrid(brickRowCount, brickColumnCount, brickOffsetLeft, brickOffsetTop, (r, c, brickX, brickY) => {
         if(r == brickRowCount-1 && c == 2){ 
-            bricks.push(new Brick(brickX, brickY, {color: "#000000", effectFunc:()=>setBallOpacity(0.2)}));
+            bricks.push(new Brick(brickX, brickY, {color: COLOR_OPACITY, effectFunc:()=>setBallOpacity(0.2)}));
         } else if(r == brickRowCount-4 && c == 1){
-            bricks.push(new Brick(brickX, brickY, {color: "blue", effectFunc:subBarsize})); 
+            bricks.push(new Brick(brickX, brickY, {color: COLOR_SUBB, effectFunc:subBarsize})); 
         } else if(r == brickRowCount-2 && c == 3){
-            bricks.push(new Brick(brickX, brickY, {color: "purple", effectFunc:addBarsize}));
+            bricks.push(new Brick(brickX, brickY, {color: COLOR_ADDB, effectFunc:addBarsize}));
         } else {
             bricks.push(new Brick(brickX, brickY, {color: colors[r]})); 
         }
@@ -892,6 +895,9 @@ function loadOopStage() {
     const COLOR_PRIVATE   = "#E74C3C"; 
     const COLOR_NORMAL    = "#95A5A6"; 
     const COLOR_BOSS      = "#76941e";
+    const COLOR_ADDB      = "#E87F24";
+    const COLOR_SUBB      = "#FFC81E";
+    const COLOR_OPACITY   = "#F8C463"
 
     for (let layer = 4; layer >= 1; layer--) {
         const positions = layerPositions[layer];
@@ -907,9 +913,16 @@ function loadOopStage() {
             blockPool.push({ type: "public_X", text: "double getX", color: COLOR_PUBLIC, hp: 1, indestructible: false });
             blockPool.push({ type: "public_Y", text: "string getY", color: COLOR_PUBLIC, hp: 1, indestructible: false });
             blockPool.push({ type: "public_Z", text: "MyData getZ", color: COLOR_PUBLIC, hp: 1, indestructible: false });
-            blockPool.push({ type: "addbar", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
-            blockPool.push({ type: "addbar", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
-            blockPool.push({ type: "addbar", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
+            blockPool.push({ type: "addbarblock", text: "", color: COLOR_ADDB, hp: 1, indestructible: false });
+            blockPool.push({ type: "addbarblock", text: "", color: COLOR_ADDB, hp: 1, indestructible: false });
+            blockPool.push({ type: "addbarblock", text: "", color: COLOR_ADDB, hp: 1, indestructible: false });
+            blockPool.push({ type: "subbarblock", text: "", color: COLOR_SUBB, hp: 1, indestructible: false });
+            blockPool.push({ type: "subbarblock", text: "", color: COLOR_SUBB, hp: 1, indestructible: false });
+            blockPool.push({ type: "subbarblock", text: "", color: COLOR_SUBB, hp: 1, indestructible: false });
+            blockPool.push({ type: "opacityblock", text: "", color: COLOR_OPACITY, hp: 1, indestructible: false });
+            blockPool.push({ type: "opacityblock", text: "", color: COLOR_OPACITY, hp: 1, indestructible: false });
+            blockPool.push({ type: "opacityblock", text: "", color: COLOR_OPACITY, hp: 1, indestructible: false });
+
             while (blockPool.length < numBlocks) blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
         } else if (layer === 3) {
             blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
@@ -922,6 +935,9 @@ function loadOopStage() {
             blockPool.push({ type: "public_Z", text: "MyData getZ", color: COLOR_PUBLIC, hp: 1, indestructible: false });
             blockPool.push({ type: "protected_getK", text: "int getK", color: COLOR_PROTECTED, hp: 1, indestructible: false });
             blockPool.push({ type: "protected_getB", text: "string getB", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "addbarblock", text: "", color: COLOR_ADDB, hp: 1, indestructible: false });
+            blockPool.push({ type: "subbarblock", text: "", color: COLOR_SUBB, hp: 1, indestructible: false });
+            blockPool.push({ type: "opacityblock", text: "", color: COLOR_OPACITY, hp: 1, indestructible: false });
             while (blockPool.length < numBlocks) blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
         } else if (layer === 2) {
             blockPool.push({ type: "private_W", text: "int W", color: COLOR_PRIVATE, hp: 1, indestructible: true });
@@ -962,6 +978,9 @@ function loadOopStage() {
             if (bData.type === "public_Z") destroyTarget(bData.layer, "private_Z");
             if (bData.type === "protected_getK") destroyTarget(2, "protected_K");
             if (bData.type === "protected_getB") destroyTarget(2, "protected_B");
+            if (bData.type === "addbarblock") addBarsize();
+            if (bData.type === "subbarblock") subBarsize();
+            if (bData.type === "opacityblock") setBallOpacity(0.2);
 
             let remainingBlocks = bricks.filter(b => b.layer === bData.layer && b.status === 1).length;
             
@@ -1079,34 +1098,96 @@ function loadWebprogrammingStage(){
 }
 
 // ---------------------------------------------------------
-//  Phase 1
+//  Phase 1 : HTML UI (Color Table Gimmick - V4 Row Stacking System)
 // ---------------------------------------------------------
 function loadWebPhase1() {
+    console.log("웹 프로그래밍 1페이즈: HTML 시작 (행 단위 독립 적재 시스템)");
+    
     bricks = []; bombs = []; brokenBricksCount = 0; 
-    totalBricks = 9999; // 💡 메인 루프 간섭 방지용
+    totalBricks = 9999; // 💡 오직 보스 처치로만 클리어 판정 제어
     resetBallAndPaddle(); 
 
-    console.log("웹 프로그래밍 1페이즈: HTML 시작");
-
-    bricks = []; bombs = []; brokenBricksCount = 0; totalBricks = 9999;
-    resetBallAndPaddle(); 
-
-    let feBoss = new BossBrick(350, 100, { 
-        // 💡 1페이즈 전용 프론트엔드 보스 이미지 삽입
- //       imageSrc: "./testImg/fe_boss.png", 
-        color: "#E44D26", text: "HTML UI", hp: 1, realType: "BOSS",
+    // 1. 메인 보스 (HTML UI)
+    let feBoss = new BossBrick(340, 60, { 
+        color: "#E44D26", text: "색상 출력하기 테이블", hp: 10, realType: "BOSS",
+        width: 120, height: 80,
         effectFunc: () => { checkWebPhaseClear(); } 
     });
-    // 프론트엔드 보스 크기를 키우고 싶다면?
-    feBoss.width = 120;
-    feBoss.height = 80;
     bricks.push(feBoss);
 
-    // 참고용: 팀원이 일반 방어벽(잡몹)을 추가하고 싶다면 이렇게 Brick을 쓰면 됩니다.
-    // let normalWall = new Brick(350, 200, { color: "#F7DF1E", text: "CSS" });
-    // bricks.push(normalWall);
-}
+    // 2. '출력하기' 버튼 블록 (행 단위 공백 체크 및 단일 행 생성)
+    let createBtn = new Brick(220, 180, {
+        color: "#3498DB", text: "출력하기", width: 140, height: 40,
+        effectFunc: function() {
+            const colors = ["#800000", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#0000FF", "#800080"];
+            const rowYs = [260, 300, 340]; // 1행, 2행, 3행의 가상 Y축 좌표 배열
+            let blockW = 80;
+            let gap = 15;
+            let startX = (canvas.width - (colors.length * blockW + (colors.length - 1) * gap)) / 2;
 
+            let rowToFill = null;
+
+            // 💡 2차원 배열 논리: 각 행을 순회하며 '완전히 비어있는 행'을 탐색
+            for (let i = 0; i < rowYs.length; i++) {
+                let targetY = rowYs[i];
+                
+                // 현재 검사 중인 행(targetY)에 살아있는 색상 블록이 한 개라도 있는지 필터링
+                let aliveBlocksInRow = bricks.filter(b => 
+                    b.realType === "COLOR_BLOCK" && b.status !== 0 && b.y === targetY
+                );
+
+                // 💡 값이 하나도 남아있지 않아야(Length가 0이어야) 해당 줄이 완전히 Clear된 것으로 판정
+                if (aliveBlocksInRow.length === 0) {
+                    rowToFill = targetY; // 최초로 발견된 빈 행의 Y좌표 저장
+                    break; // 💡 한 줄만 채우고 즉시 루프 탈출 (통으로 채우기 방지)
+                }
+            }
+
+            // 완전히 비어있는 행이 존재할 때만 한 줄 추가 실행
+            if (rowToFill !== null) {
+                colors.forEach((c, idx) => {
+                    let colorBlock = new Brick(startX + idx * (blockW + gap), rowToFill, {
+                        color: c, text: "", width: blockW, height: 30
+                    });
+                    colorBlock.realType = "COLOR_BLOCK"; // 삭제 및 행 판정용 태그
+                    bricks.push(colorBlock);
+                });
+                console.log(`완전히 비어있는 행(${rowToFill}px)에 한 줄을 새로 설치했습니다.`);
+            } else {
+                console.log("모든 행에 최소 1개 이상의 블록이 남아있어 새 줄을 추가할 수 없습니다.");
+            }
+        }
+    });
+
+    // 🔥 [무적화] 출력 버튼 HP 고정 (부서지지 않음)
+    createBtn.onHit = function() {
+        if (typeof this.effectFunc === "function") this.effectFunc();
+    };
+    bricks.push(createBtn);
+
+    // 3. '없애기' 버튼 블록 (개수와 상관없이 모든 색상 블록 일괄 제거)
+    let removeBtn = new Brick(440, 180, {
+        color: "#E74C3C", text: "없애기", width: 140, height: 40,
+        effectFunc: function() {
+            let removedCount = 0;
+            // 실시간으로 캔버스에 존재하는 모든 COLOR_BLOCK을 강제 파괴 상태로 전환
+            bricks.forEach(b => {
+                if (b.realType === "COLOR_BLOCK" && b.status !== 0) {
+                    b.status = 0;
+                    brokenBricksCount++; 
+                    removedCount++;
+                }
+            });
+            console.log(`화면의 색상 블록 ${removedCount}개를 전부 초기화했습니다. 다시 1행부터 추가 가능합니다.`);
+        }
+    });
+
+    // 🔥 [무적화] 삭제 버튼 HP 고정 (부서지지 않음)
+    removeBtn.onHit = function() {
+        if (typeof this.effectFunc === "function") this.effectFunc();
+    };
+    bricks.push(removeBtn);
+}
 // ---------------------------------------------------------
 //  Phase 2  
 // ---------------------------------------------------------
@@ -1408,7 +1489,7 @@ function clearGame(){
 function resetBallAndPaddle() { //공, 패들 리셋 함수
     x = canvas.width / 2;
     y = canvas.height - 30;
-    const startAngle = Math.random() * Math.PI / 4; 
+    const startAngle = (Math.random() - 0.5) * Math.PI / 2; 
     dx = ballSpeed * Math.sin(startAngle); dy = -ballSpeed * Math.cos(startAngle);
     paddleX = (canvas.width - paddleWidth) / 2;
 }
