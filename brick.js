@@ -687,14 +687,45 @@ function spawnSpecialBall() {
     // 패들과 바로 충돌하지 않게 캔버스 내 랜덤 위치 설정
     let spawnX = radius + Math.random() * (canvas.width - radius * 2);
     let spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
+    let speed = Math.random() * 3 + 3; 
+    let dx, dy;
+
+    let boss = bricks.find(b => b.realType === "BOSS");
+    if (boss) {
+        let bossLeft = boss.x;
+        let bossRight = boss.x + boss.width;
+        let bossBottom = boss.y + boss.height;
+
+        if (spawnX < bossLeft) {
+            // 보스 왼쪽: -x 방향으로만 가속 (120도 ~ 240도)
+            let angle = (2/3 * Math.PI) + Math.random() * (2/3 * Math.PI);
+            dx = Math.cos(angle) * speed;
+            dy = Math.sin(angle) * speed;
+        } else if (spawnX > bossRight) {
+            // 보스 오른쪽: +x 방향으로만 가속 (-60도 ~ 60도)
+            let angle = (-1/3 * Math.PI) + Math.random() * (2/3 * Math.PI);
+            dx = Math.cos(angle) * speed;
+            dy = Math.sin(angle) * speed;
+        } else {
+            // 보스 양끝단 사이: 위쪽에 스폰되지 않게 Y좌표 강제 조정
+            if (spawnY < bossBottom + radius) {
+                spawnY = bossBottom + radius + Math.random() * 50;
+            }
+            // 연직 방향으로만 가속 (캔버스에서는 +y가 아래 방향)
+            dx = 0;
+            dy = speed;
+        }
+    } else {
+        // 360도 랜덤한 방향으로 랜덤 속도 설정
+        let angle = Math.random() * Math.PI * 2;
+        dx = Math.cos(angle) * speed;
+        dy = Math.sin(angle) * speed;
+    }
 
     let sb = new SpecialBall(spawnX, spawnY);
     
-    // 360도 랜덤한 방향으로 3~6 사이의 랜덤 속도 설정
-    let angle = Math.random() * Math.PI * 2;
-    let speed = Math.random() * 3 + 3; 
-    sb.dx = Math.cos(angle) * speed;
-    sb.dy = Math.sin(angle) * speed;
+    sb.dx = dx;
+    sb.dy = dy;
 
     specialBalls.push(sb);
 }
