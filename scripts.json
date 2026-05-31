@@ -1,13 +1,11 @@
 {
   "intro": [
-    { "speaker": "나", "text": "학교가기 진짜 싫다" },
+    { "speaker": "나", "text": "학교가기 진짜 싫다" ,"layout":"none"},
     { "speaker": "나", "text": "벌써 집에 가고 싶은데" },
     { "speaker": "나", "text": "이제 막 9시네" },
-    { "speaker": "나", "text": "오늘 하루도 잘 버텨보자..." }
-  ],
-  "middleC_programming": [
-    { "speaker": "나", "text": "강의 언제 끝나냐..." },
-    { "speaker": "나", "text": "어라? 이게 뭐지?" },
+    { "speaker": "나", "text": "오늘 하루도 잘 버텨보자..." },
+    { "speaker": "나", "text": "강의 언제 끝나냐..."},
+    { "speaker": "나", "text": "어라? 이게 뭐지?" , "layout" : "flex"},
     { "speaker": "나", "text": "이건 벽돌 깨기 게임 아니야?" },
     { "speaker": "나", "text": "이게 왜 ...." },
     { "speaker": "나", "text": "어? 책상에 못보던 낙서가 생겼다" },
@@ -27,11 +25,9 @@
     { "speaker": "나", "text": "다음 강의실로 이동하자" }
   ],
   "startDiscrete":[
-    { "speaker": "나", "text": "1교시부터 힘들었다..." },
-    { "speaker": "나", "text": "이산 수학은 별 일 없겠지?" }
-  ],
-  "middleDiscrete":[
-    { "speaker": " ", "text": "(블럭들이 등장한다)" },
+    { "speaker": "나", "text": "1교시부터 힘들었다...","layout":"none" },
+    { "speaker": "나", "text": "이산 수학은 별 일 없겠지?" },
+    { "speaker": " ", "text": "(블럭들이 등장한다)" , "layout" : "flex"},
     { "speaker": "나", "text": "아 제발" }
   ],
   "clearDiscrete":[
@@ -42,40 +38,45 @@
     { "speaker": "나", "text": "다음 강의나 들으러 가자..." }
   ],
   "startOop":[
-    { "speaker": "나", "text": "객지프는 어떠려나" },
+    { "speaker": "나", "text": "객지프는 어떠려나","layout":"none" },
     { "speaker": "나", "text": "그렇게 어렵지 않았으면 좋겠는데" },
-    { "speaker": "블루조아", "text": "객지프에 오신 것을 환영합니다." },
-    { "speaker": "나", "text": "블루...조아..?" },
-    { "speaker": "블루조아", "text": "미니언이 생성되었습니다." },
-    { "speaker": "블루조아", "text": "Not enough minerals" }
+    { "speaker": "블랙조아", "text": "출석부르겠습니다. OOO, OOO, OOO...." , "layout" : "flex"},
+    { "speaker": "나", "text": "블랙...조아..?" },
+    { "speaker": "블랙조아", "text": "오늘은 실습실 컴퓨터로 진행하겠습니다." },
+    { "speaker": "블랙조아", "text": "모든 멤버변수는 private으로 지정해야합니다." },
+    { "speaker": "블랙조아", "text": "public으로 멤버변수에 접근하도록 하십쇼." },
+    { "speaker": "나", "text": "아... 저 변수 블럭은 get함수로 깨야하나봐" },
+    { "speaker": "블루조아", "text": "팀실습입니다. 먼저 성공한 팀은 검사맡으면 되겠습니다." },
+    { "speaker": "나", "text": "아" }
   ],
   "clearOop":[
     { "speaker": "나", "text": "무서웠다.. 블루조아..." },
-    { "speaker": "나", "text": "의미를 부여할 수 있는 색이라 더 위험했던 것 같아..." },
+    { "speaker": "나", "text": "오늘도 팀실습이라니, 너무 힘들다..." },
     { "speaker": "나", "text": "이제 점심이나 먹으면서 한숨 돌려야지" },
-    { "speaker": "나", "text": "뭐 먹지" }
+    { "speaker": "나", "text": "그래서 뭐 먹지" }
   ],
   "lunchTime":[
-    { "speaker": "나", "text": "오늘은 학식이나 먹어야겠다" },
+    { "speaker": "나", "text": "오늘은 그냥 학식이나 먹어야겠다","layout":"none" },
     { "speaker": "나", "text": "후문까지 가기엔 너무 멀단 말이지" },
     { "speaker": "나", "text": "뭐를 먹어야 야무지게 먹었다고 소문이 날까" },
-    { "speaker": "나", "text": "고기덮밥, 쌀국수, 돈까스 가 있네" },
+    { "speaker": "나", "text": "사람이 왜 이렇게 많아?" , "layout" : "flex"},
+    { "speaker": "나", "text": "어디보자 오늘 메뉴는...." },
+    { "speaker": "나", "text": "민초고기덮밥, 하와이안쌀국수, 돈까수윙수 가 있네" },
+    { "speaker": "나", "text": "아 예?" },
     { "speaker": "나", "text": "설명을 보니 고기덮밥은 민초가 들어가네" },
     { "speaker": "나", "text": ".... 민초?" },
     { "speaker": "나", "text": "쌀국수는 고기가 빠지고 고수에 파인애플이 들어가?" },
-    { "speaker": "나", "text": "돈까스는 등심도 아니고 안심도 아니고 머릿고기를 쓴다고?" },
+    { "speaker": "나", "text": "돈까수윙수는 뭐야? 뭔가를 변기에 넣고서 내려야되나" },
     { "speaker": "나", "text": "..." },
-    { "speaker": "나", "text": "안먹어" }
+    { "speaker": "나", "text": "(╯°□°）╯︵ ┻━┻" }
   ],
   "startDataStructure":[
-    { "speaker": "나", "text": "오늘 수업이 이상하더니 메뉴까지 이상해져버리네" },
+    { "speaker": "나", "text": "오늘 수업이 이상하더니 메뉴까지 이상해져버리네" ,"layout":"none"},
     { "speaker": "나", "text": "그냥 끝나고 정상적인거 먹으러 가야겠다... ㅠ.ㅠ" },
     { "speaker": "나", "text": "다음 수업은 자료구조네" },
     { "speaker": "나", "text": "6층까지 언제 올라가지..." },
-    { "speaker": "", "text": "강의실로 이동 중..." }
-  ],
-  "middleDataStructure":[
-    { "speaker": "나", "text": "어? 뭐지" },
+    { "speaker": " ", "text": "강의실로 이동 중..." },
+    { "speaker": "나", "text": "어? 뭐지" ,"layout" : "flex"},
     { "speaker": "나", "text": "어디선가 화약 냄새가 나." },
     { "speaker": "나", "text": "블럭을 깨면 랜덤으로 폭탄이 나올 것 같은데?" },
     { "speaker": "나", "text": "폭탄은 클릭하면 터지지 않을 것 같아" },
@@ -84,12 +85,23 @@
   "clearDataStructure":[
     { "speaker": "나", "text": "와 많이 어려웠다." },
     { "speaker": "나", "text": "역시 자료구조 쉽지 않은 과목이야" },
-    { "speaker": "나", "text": "너프좀" },
+    { "speaker": "나", "text": "다음 학기에 알고리즘은 도대체 얼마나 어려울까 ㅠ.ㅠ" },
     { "speaker": "나", "text": "다음은 웹프다" },
     { "speaker": "나", "text": "웹프만 들으면 오늘은 끝이야..." },
     { "speaker": "나", "text": "쨀까?" }
   ],
   "startWebprogramming" : [
-    { "speaker": "나", "text": "" }
+    { "speaker": "나", "text": "항상 새관 엘리베이터는 타기 힘들단 말이지" },
+    { "speaker": "나", "text": "걸어올 수도 없는 노릇이고" },
+    { "speaker": "나", "text": "깔끔하게 웹프 끝내고 집에 가서 푹 쉬자" },
+    { "speaker": "Little Old", "text": "여러분, 동영상 강의는 잘 들으셨죠?" },
+    { "speaker": "나", "text": "아 맞다. 틀어만 두고 안들었는데" },
+    { "speaker": "Little Old", "text": "제가 강의를 듣지 않은 여러분을 위해 선물을 준비했어요." },
+    { "speaker": "Little Old", "text": "선물은 바로..." },
+    { "speaker": "Little Old", "text": "랩실습과 팀프로젝트, 과제입니다" },
+    { "speaker": "Little Old", "text": "그럼 한번 해 보시지요" },
+    { "speaker": "나", "text": "이런, 어서 빨리 도망쳐야겠어" },
+    { "speaker": "나", "text": "강의를 빠르게 끝내보자" },
+    { "speaker": "나", "text": "왜 마지막 수업까지 이러는거야 ㅠㅠㅠㅠ" }
   ]
 }
