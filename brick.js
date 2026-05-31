@@ -421,10 +421,10 @@ class SpecialBall {
         let rand = Math.random();
         if (rand < 0.5) {
             this.text = "팀플";
-            this.damage = 10;
+            this.damage = 5;
         } else {
             this.text = "과제";
-            this.damage = 20;
+            this.damage = 10;
         }
         
         // 보스 아래에서 시작해서 떨어짐
@@ -707,6 +707,21 @@ function spawnSpecialBall() {
         spawnY = boss.y + boss.height + 20;
     }
     specialBalls.push(new SpecialBall(spawnX, spawnY));
+    let radius = 20; // 특수공의 기본 반지름
+    
+    // 패들과 바로 충돌하지 않게 캔버스 내 랜덤 위치 설정
+    let spawnX = radius + Math.random() * (canvas.width - radius * 2);
+    let spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
+
+    let sb = new SpecialBall(spawnX, spawnY);
+    
+    // 360도 랜덤한 방향으로 3~6 사이의 랜덤 속도 설정
+    let angle = Math.random() * Math.PI * 2;
+    let speed = Math.random() * 3 + 3; 
+    sb.dx = Math.cos(angle) * speed;
+    sb.dy = Math.sin(angle) * speed;
+
+    specialBalls.push(sb);
 }
 
 // === 아이템 및 기믹 효과 함수들 ===
@@ -1251,13 +1266,13 @@ function loadDSStage4(treeDepth = 4) {
     const startY = 80, gapY = 80, centerX = canvas.width / 2;
     const getRandomEffect = (blockX, blockY, blockWidth, blockHeight) => {
         const weightedEffects = [
-            { weight: 10, effect: () => setBallOpacity(0.2) }, 
+            { weight: 15, effect: () => setBallOpacity(0.2) }, 
             { weight: 15, effect: subBarsize },               
             { weight: 15, effect: addBarsize },               
             { weight: 10, effect: () => { dx = dx > 0 ? dx + 1 : dx - 1; dy = dy > 0 ? dy + 1 : dy - 1; } }, 
-            { weight: 20, effect: spawnRandomBrick },         
+            { weight: 30, effect: spawnRandomBrick },         
             { weight: 10, effect: () => spawnBomb(blockX + blockWidth / 2, blockY + blockHeight / 2) },      
-            { weight: 20, effect: () => {} }                  
+            { weight: 5, effect: () => {} }                  
         ];
         let rand = Math.random() * 100, cumulativeWeight = 0;
         for (let i = 0; i < weightedEffects.length; i++) {
