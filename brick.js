@@ -1079,14 +1079,14 @@ function randomBossMap() {
 function loadDiscreteStage() {
     startScene("sample");
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
-    resizeGame(700, 500);
+    resizeGame(700, 550);
 
     const map = randomDiscreteMap();
     const brickRowCount = map.length;
     const brickColumnCount = map[0].length;
     const grid = Array.from({ length: brickRowCount }, () => Array(brickColumnCount).fill(null));
 
-    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -30);
+    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -70);
 
     let confirmBlock = null;
     let finalOutputBlock = null;
