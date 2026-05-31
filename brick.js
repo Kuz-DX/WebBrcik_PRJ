@@ -1549,7 +1549,7 @@ function handleGameStart() {
         }
 }
 function handleSceneEnd() {
-    if (currentStage == 2) clearGame();
+    if (currentStage == 3) gameClearScreen.style.display = "flex";
     if(questBox) questBox.style.display = 'none';
     clearBtns.style.visibility = "visible";
 }
