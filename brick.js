@@ -124,6 +124,13 @@ let allStoryData = {"lunchTime": [
     "clearSample":[
     { "speaker": "나", "text": "클리어 텍스트~" },
     { "speaker": "나", "text": "샘플 야호~" }
+    ],
+    "introSample":[
+    { "speaker": "나", "text": "학교가기 진짜 싫다" ,"layout":"none"},
+    { "speaker": "나", "text": "벌써 집에 가고 싶은데" },
+    { "speaker": "나", "text": "이제 막 9시네" },
+    { "speaker": "나", "text": "오늘 하루도 잘 버텨보자..." },
+    { "speaker": "나", "text": "강의 언제 끝나냐..." , "layout" : "flex"}
     ]
 }; 
 let currentScript = ["sampleText"]; 
@@ -764,7 +771,7 @@ function loadStage(stageIndex){
 
 // === 스테이지 0: 튜토리얼 ===
 function loadTutorialStage(){
-    startScene("sample");
+    startScene("introSample");
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
@@ -1214,6 +1221,8 @@ function showDialogue() {
       const currentLine = currentScript[currentIndex];
       speakerEl.innerText = currentLine.speaker;
       dialogueEl.innerText = currentLine.text;
+      if(currentLine.layout === "flex") canvas.style.visibility = "visible";
+      else if (currentLine.layout === "none") canvas.style.visibility = "hidden";
   } else {
       if(isGameOver) handleSceneEnd();
       else handleGameStart();
