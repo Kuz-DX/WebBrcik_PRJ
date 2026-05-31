@@ -59,6 +59,24 @@ body {
     align-items: center;
     z-index: 100;
 }
+#clearMessageContainer {
+    display: flex;
+    align-items: baseline; /* 글씨들의 아래쪽 기준선을 예쁘게 맞춰줍니다 */
+    justify-content: center;
+    gap: 15px; /* '스테이지 클리어!'와 'A+' 사이의 여백 */
+    margin-bottom: 25px; /* 아래 버튼들과의 간격 */
+}
+#gameClearMessage {
+    margin: 0;
+    font-size: 32px; /* 기존 스테이지 클리어 글씨 크기 */
+}
+#scoreDisplay {
+    display: none; 
+    font-size: 54px; /* ★ 학점 글씨를 더 크고 눈에 띄게 확 키웠습니다! */
+    font-weight: bold; 
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
+    /* 이전의 절대위치(absolute)와 회전(rotate) 코드는 모두 삭제되었습니다. */
+}
 
 #gameOverMessage {
     font-size: 32px;

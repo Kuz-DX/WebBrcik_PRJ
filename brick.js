@@ -1402,8 +1402,45 @@ function endGame(message) {
     gameOverMessage.innerText = message;
     switchScreen(gameOverScreen); 
 }
+// === 스테이지별 학점(Score) 계산 함수 ===
+function calculateGrade(stage, cost) {
+    if (stage === 3) return "A+"; // 점심시간은 무조건 A+ 
+    let cutlines;
+    // 배열 순서대로 [A+, A, B+, B, C+] 커트라인 (단위: cost 횟수)
+    switch(stage) {
+        case 0: cutlines = [15, 20, 25, 30, 35]; break;       // 튜토리얼
+        case 1: cutlines = [15, 25, 35, 45, 55]; break;     // 이산수학
+        case 2: cutlines = [20, 30, 40, 50, 65]; break;     // 객체지향
+        case 4: cutlines = [15, 25, 35, 45, 60]; break;     // 자료구조
+        case 5: cutlines = [70, 85, 100, 115, 130]; break;  // 웹프로그래밍
+        default: cutlines = [20, 30, 40, 50, 60];
+    }
+
+    if (cost <= cutlines[0]) return "A+";
+    if (cost <= cutlines[1]) return "A";
+    if (cost <= cutlines[2]) return "B+";
+    if (cost <= cutlines[3]) return "B";
+    if (cost <= cutlines[4]) return "C+";
+    return "C";
+}
+// === 게임 클리어 처리 함수 ===
 function clearGame(){
-    isGameOver = true; isGameStarted = false; isCleared = true;
+    isGameOver = true; 
+    isGameStarted = false; 
+    isCleared = true;
+    
+    // score 계산
+    let finalGrade = calculateGrade(currentStage, paddleHitCount);
+    // A 금색, B 초록색, C 빨간색
+    let gradeColor = (finalGrade.includes("A")) ? "#FFD700" : (finalGrade.includes("B")) ? "#2ECC71" : "#E74C3C";
+    // HTML에 성적 텍스트와 색상 주입 및 표시
+    const scoreDisplay = document.getElementById("scoreDisplay");
+    if(scoreDisplay) {
+        scoreDisplay.innerText = finalGrade;
+        scoreDisplay.style.color = gradeColor;
+        scoreDisplay.style.display = "block";
+    }
+
     currentStage++;
     if (currentStage > maxStage) maxStage = currentStage;
     switchScreen(gameClearScreen); 
