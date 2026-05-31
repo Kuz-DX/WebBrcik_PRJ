@@ -112,9 +112,9 @@ const statusMap = {
 
 const diff = { //난이도 객체
     easy: { paddleWidth : 15, speed : 10, bombProb : 3 },
-    normal: { paddleWidth : 10, speed : 15, bombProb : 10 },
-    gosu : { paddleWidth : 7, speed : 20, bombProb : 15 },
-    goat : { paddleWidth : 5, speed : 25, bombProb : 25 }
+    normal: { paddleWidth : 10, speed : 13, bombProb : 10 },
+    gosu : { paddleWidth : 7, speed : 15, bombProb : 12 },
+    goat : { paddleWidth : 5, speed : 20, bombProb : 20 }
 };
 
 //대화창 관련 변수
