@@ -708,7 +708,7 @@ function spawnSpecialBall() {
     }
     specialBalls.push(new SpecialBall(spawnX, spawnY));
     let radius = 20; // 특수공의 기본 반지름
-    
+        
     // 패들과 바로 충돌하지 않게 캔버스 내 랜덤 위치 설정
     spawnX = radius + Math.random() * (canvas.width - radius * 2);
     spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
