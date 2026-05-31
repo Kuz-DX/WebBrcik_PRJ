@@ -699,19 +699,11 @@ function updateSpecialBalls() {
 }
 
 function spawnSpecialBall() {
-    let boss = bricks.find(b => b.realType === "BOSS");
-    let spawnX = canvas.width / 2;
-    let spawnY = canvas.height / 3;
-    if (boss) {
-        spawnX = boss.x + boss.width / 2;
-        spawnY = boss.y + boss.height + 20;
-    }
-    specialBalls.push(new SpecialBall(spawnX, spawnY));
     let radius = 20; // 특수공의 기본 반지름
 
     // 패들과 바로 충돌하지 않게 캔버스 내 랜덤 위치 설정
-    spawnX = radius + Math.random() * (canvas.width - radius * 2);
-    spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
+    let spawnX = radius + Math.random() * (canvas.width - radius * 2);
+    let spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
 
     let sb = new SpecialBall(spawnX, spawnY);
     
