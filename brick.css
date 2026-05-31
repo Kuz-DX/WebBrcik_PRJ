@@ -293,6 +293,34 @@ body {
   align-items: center;
   z-index: 11;
 }
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 2px solid #333;
+}
+.modal-header h2 { margin: 0; font-size: 22px; color: #cca658; }
+
+.modal-body {
+  padding: 20px;
+  overflow-y: auto; 
+  flex: 1;
+  min-height: 0;
+  height: 300px; 
+}
+
+
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+.modal-body::-webkit-scrollbar-track {
+    background: #111;
+}
+.modal-body::-webkit-scrollbar-thumb {
+    background: #cca658; /* 스크롤바 초콜릿/겨자색 */
+    border-radius: 4px;
+}
 
 .modal-content {
   background: rgba(28, 35, 43, 0.98); 
@@ -304,7 +332,6 @@ body {
   text-align: left;
   color: #ffffff;
 }
-
 .modal-content h2 {
   margin-top: 0;
   color: #f1c40f; 
@@ -323,7 +350,16 @@ body {
 .modal-content b {
   color: #f1c40f; 
 }
-
+.help-section {
+    margin-bottom: 25px;
+}
+.help-section h3 {
+    margin-top: 0; color: #fff; border-left: 3px solid #cca658; padding-left: 8px;
+}
+.help-section p {
+    line-height: 1.6; font-size: 15px; color: #b8b3a9;
+}
+code { background: #2a2b2d; padding: 2px 6px; border-radius: 4px; color: #fff; }
 
 /* 닫기 버튼 */
 .close-btn {
@@ -337,6 +373,9 @@ body {
   cursor: pointer;
   font-weight: bold;
   transition: background 0.2s;
+}
+#closeHowToPlayBtn{
+  width: 30%;
 }
 
 .close-btn:hover {

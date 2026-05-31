@@ -16,6 +16,7 @@
         <div class="menu-container-br">
             <button id="startNewGameBtn" class="menu-btn">시작</button>
             <button id="difficultyBtn" class="menu-btn">난이도</button>
+            <button id="howToPlayBtn" class="menu-btn">플레이 방법</button>
             <button id="optionBtn" class="menu-btn">옵션</button>
         </div>
         </div> 
@@ -32,32 +33,7 @@
                 <button id="closeStageBtn" class="close-btn">닫기</button>
             </div>
         </div>
-        <div id="optionSelectModal" class="modal-overlay">
-            <div class="modal-content option-modal">
-                <h2>옵션 설정</h2>
-                <div class="option-item">
-                    <label for="ballSkinSelect">공 :</label>
-                    <select id="ballSkinSelect" class="option-select">
-                        <option value="default">기본</option>
-                        <option value="./testImg/baseball.jpg">야구공</option>
-                        <option value="./testImg/basketball.jpg">농구공</option>
-                        <option value="./testImg/soccerball.jpg">축구공</option>
-                        <option value="rgb">RGB</option> 
-                    </select>
-                </div>
-                <div class="option-item">
-                    <label for="paddleSkinSelect">패들 :</label>
-                    <select id="paddleSkinSelect" class="option-select">
-                        <option value="default">기본</option>
-                        <option value="wood">나무</option>
-                        <option value="steel">금속</option>
-                        <option value="uretan">우레탄</option>
-                        <option value="rgb">RGB</option> 
-                    </select>
-                    </div>
-                <button id="closeOptionBtn" class="close-btn">닫기</button>
-            </div>
-        </div>
+        
     <div id="difficultyModal" class="modal-overlay">
         <div class="modal-content difficulty-modal">
             <h2>난이도 선택</h2>
@@ -68,6 +44,68 @@
                 <button class="diff-item-btn" value="goat">G.O.A.T</button>
             </div>
             <button id="closeDifficultyBtn" class="close-btn">닫기</button>
+        </div>
+    </div>
+    <div id="howToPlayModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>플레이 방법</h2>
+                <button id="closeHowToPlayBtn" class="close-btn">닫기</button>
+            </div>
+            <div class="modal-body">
+                <section class="help-section">
+                    <h3>1. 기본 조작법</h3>
+                    <p>마우스를 좌우로 움직여 패들을 조작할 수 있습니다.</p>
+                    <p>게임 중 언제든지 <code>ESC</code> 키를 누르면 일시정지 메뉴가 나타납니다.</p>
+                </section>
+
+                <section class="help-section">
+                    <h3>2. 게임 규칙</h3>
+                    <p>공이 화면 아래로 떨어지기 전에 패들로 튕겨내어 화면 상단의 모든 벽돌을 파괴해야 합니다.</p>
+                    <p>모든 벽돌을 부수면 스테이지를 클리어합니다.</p>
+                </section>
+
+                <section class="help-section">
+                    <h3>3. 특수 효과</h3>
+                    <p><strong>투명화 :</strong> 잠시 공이 조금 투명해집니다.</p>
+                    <p><strong>폭탄 :</strong> 폭탄이 떨어집니다. 클릭하여 없앨 수 있습니다.</p>
+                    <p><strong>패들 크기 조절 : </strong> 패들의 크기가 늘어나거나 줄어듭니다.</p>
+                    <p>+ 각 스테이지 별 특수 블럭들이 있습니다. 직접 플레이하면서 확인하세요!</p>
+                </section>
+    
+
+                <section class="help-section">
+                    <h3>4. 점수</h3>
+                    <p>공을 튀긴 횟수가 적을 수록 좋은 점수를 받습니다.</p>
+                    <p>적은 횟수로 벽돌을 깨어 높은 점수에 도전해보세요!</p>
+                </section>
+            </div>
+        </div>
+    </div>
+    <div id="optionSelectModal" class="modal-overlay">
+        <div class="modal-content option-modal">
+            <h2>옵션 설정</h2>
+            <div class="option-item">
+                <label for="ballSkinSelect">공 :</label>
+                <select id="ballSkinSelect" class="option-select">
+                    <option value="default">기본</option>
+                    <option value="./testImg/baseball.jpg">야구공</option>
+                    <option value="./testImg/basketball.jpg">농구공</option>
+                    <option value="./testImg/soccerball.jpg">축구공</option>
+                    <option value="rgb">RGB</option> 
+                </select>
+            </div>
+            <div class="option-item">
+                <label for="paddleSkinSelect">패들 :</label>
+                <select id="paddleSkinSelect" class="option-select">
+                    <option value="default">기본</option>
+                    <option value="wood">나무</option>
+                    <option value="steel">금속</option>
+                    <option value="uretan">우레탄</option>
+                    <option value="rgb">RGB</option> 
+                </select>
+                </div>
+            <button id="closeOptionBtn" class="close-btn">닫기</button>
         </div>
     </div>
 

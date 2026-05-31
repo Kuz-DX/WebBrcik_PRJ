@@ -50,6 +50,9 @@ const dialogueArea = document.getElementById("dialogueArea");
 const gameStartArea = document.getElementById("gameStartArea");
 const startBtn = document.getElementById("startBtn");
 const clearBtns = document.getElementById("clearBtn");
+const howToPlayBtn = document.getElementById("howToPlayBtn");
+const howToPlayModal = document.getElementById("howToPlayModal");
+const closeHowToPlayBtn = document.getElementById("closeHowToPlayBtn");
 
 // 게임 루프 및 흐름 제어 변수
 let animationId = null; // 애니메이션 루프 ID를 저장할 변수
@@ -1540,7 +1543,6 @@ function startScene(sceneName) {
 function showDialogue() {
     const speakerEl = document.getElementById("speaker");
     const dialogueEl = document.getElementById("dialogue");
-    if (!speakerEl || !dialogueEl) return;
     if (currentIndex < currentScript.length) {
       const currentLine = currentScript[currentIndex];
       speakerEl.innerText = currentLine.speaker;
@@ -1552,6 +1554,7 @@ function showDialogue() {
             break;
         case "none":
             canvas.style.visibility = "hidden";
+            gameClearScreen.style.display = "none";
             break;
         case "F":
             //추가 예정
@@ -1566,6 +1569,9 @@ function showDialogue() {
             speakerEl.style.backgroundColor = "rgba(0, 0, 0, 1)";
             questBox.style.color = "#ffd700";
             break;
+        case "lunchEnd":
+            currentStage++;
+            break;
       }
   } else {
       if(isGameOver) handleSceneEnd();
@@ -1577,11 +1583,10 @@ function handleGameStart() {
         gameStartArea.style.display = "block";
 }
 function handleSceneEnd() {
-    if (currentStage == 3) {
+    if (currentStage == 4) {
         gameClearScreen.style.display = "flex";
     }
-
-    if(questBox) questBox.style.display = 'none';
+    questBox.style.display = 'none';
     clearBtns.style.visibility = "visible";
 }
 function nextDialogue() {
@@ -1754,6 +1759,12 @@ paddleSkinSelect.addEventListener("change", (e) => { //패들 이미지 선택 �
     paddleSkinType = val;
 });
 
+howToPlayBtn.addEventListener("click",()=>{
+    switchScreen(howToPlayModal);
+});
+closeHowToPlayBtn.addEventListener("click",()=>{
+    switchScreen(mainScreen);
+});
 
 // ==========================================
 // 8. 메인 엔진 (게임 루프 및 초기화)
