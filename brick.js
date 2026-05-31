@@ -960,6 +960,16 @@ function createGrid(rows, cols, startX, startY, callback) {
         }
     }
 }
+// 추가된 중앙 정렬 함수
+function calculateCenterOffset(rows, cols, offsetY = 0) {
+    const totalWidth = cols * (brickWidth + brickPadding) - brickPadding;
+    const totalHeight = rows * (brickHeight + brickPadding) - brickPadding;
+    
+    const startX = (canvas.width - totalWidth) / 2;
+    const startY = (canvas.height - totalHeight) / 2 + offsetY;
+    
+    return { startX, startY };
+}
 
 function loadStage(stageIndex){
     
@@ -988,7 +998,8 @@ function loadTutorialStage(){
     const COLOR_SUBB      = "#FFC81E";
     const COLOR_OPACITY   = "#F8C463"
     canvas.style.backgroundImage = "url(./testImg/CProgramming.png)";
-    createGrid(brickRowCount, brickColumnCount, brickOffsetLeft, brickOffsetTop, (r, c, brickX, brickY) => {
+    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -50);
+    createGrid(brickRowCount, brickColumnCount, startX, startY, (r, c, brickX, brickY) => {
         if(r == brickRowCount-1 && c == 2){ 
             bricks.push(new Brick(brickX, brickY, {color: COLOR_OPACITY, effectFunc:()=>setBallOpacity(0.2)}));
         } else if(r == brickRowCount-4 && c == 1){
@@ -1060,10 +1071,12 @@ function loadDiscreteStage() {
     const brickColumnCount = map[0].length;
     const grid = Array.from({ length: brickRowCount }, () => Array(brickColumnCount).fill(null));
 
+    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -30);
+
     let confirmBlock = null;
     let finalOutputBlock = null;
 
-    createGrid(brickRowCount, brickColumnCount, brickOffsetLeft, brickOffsetTop, (r, c, brickX, brickY) => {
+    createGrid(brickRowCount, brickColumnCount, startX, startY, (r, c, brickX, brickY) => {
         let blockStatus = map[r][c];
         if (blockStatus !== 0) {
             grid[r][c] = new Brick(brickX, brickY, { status: blockStatus });
@@ -1108,8 +1121,7 @@ function loadOopStage() {
     }
 
     const totalBlockWidth = cols * (brickWidth + brickPadding) - brickPadding;
-    const startX = (canvas.width - totalBlockWidth) / 2;
-    const startY = 70;
+    const { startX, startY } = calculateCenterOffset(rows, cols, -40);
     const blockGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
 
     const COLOR_PUBLIC    = "#3498DB"; 
