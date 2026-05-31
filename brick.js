@@ -708,7 +708,7 @@ function spawnSpecialBall() {
     }
     specialBalls.push(new SpecialBall(spawnX, spawnY));
     let radius = 20; // 특수공의 기본 반지름
-        
+
     // 패들과 바로 충돌하지 않게 캔버스 내 랜덤 위치 설정
     spawnX = radius + Math.random() * (canvas.width - radius * 2);
     spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
@@ -1278,13 +1278,13 @@ function loadDSStage4(treeDepth = 4) {
     const startY = 80, gapY = 80, centerX = canvas.width / 2;
     const getRandomEffect = (blockX, blockY, blockWidth, blockHeight) => {
         const weightedEffects = [
-            { weight: 15, effect: () => setBallOpacity(0.2) }, 
-            { weight: 15, effect: subBarsize },               
-            { weight: 15, effect: addBarsize },               
-            { weight: 10, effect: () => { dx = dx > 0 ? dx + 1 : dx - 1; dy = dy > 0 ? dy + 1 : dy - 1; } }, 
+            { weight: 15, effect: () => setBallOpacity(0.1) }, 
+            { weight: 10, effect: subBarsize },               
+            { weight: 10, effect: addBarsize },               
+            { weight: 15, effect: () => { dx = dx > 0 ? dx + 1 : dx - 1; dy = dy > 0 ? dy + 1 : dy - 1; } }, 
             { weight: 30, effect: spawnRandomBrick },         
-            { weight: 10, effect: () => spawnBomb(blockX + blockWidth / 2, blockY + blockHeight / 2) },      
-            { weight: 5, effect: () => {} }                  
+            { weight: 20, effect: () => spawnBomb(blockX + blockWidth / 2, blockY + blockHeight / 2) },      
+            { weight: 0, effect: () => {} }                  
         ];
         let rand = Math.random() * 100, cumulativeWeight = 0;
         for (let i = 0; i < weightedEffects.length; i++) {
