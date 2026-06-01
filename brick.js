@@ -90,6 +90,10 @@ let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
 let paddleHitCount = 0;  // 패들에 공이 부딪힌 횟수(cost)
 let currentWebPhase = 0; // 웹 프로그래밍 페이즈 관리 변수
 let playerHp = 3;        // 플레이어 체력 변수
+let highestGrades = {}; // 스테이지별 최고 학점(객체)을 저장
+const gradeRank = { "A+": 7, "A": 6, "B+": 5, "B": 4, "C+": 3, "C": 2, "F": 1 }; // 학점 가중치
+const diffRank = { "easy": 100, "normal": 200, "gosu": 300, "goat": 400 }; // 난이도별 가중치 (난이도 최우선)
+let currentDifficulty = "easy"; // 현재 선택된 난이도
 let specialBalls = [];   // 특수공 배열
 let specialBallTimer = 0; // 특수공 생성 타이머
 let bossBombTimer = 0;   // 보스 폭탄 생성 타이머
@@ -600,8 +604,10 @@ function checkPaddleCollision() {
             
             dx = ballSpeed * Math.sin(bounceAngle);
             dy = -ballSpeed * Math.cos(bounceAngle); 
+            
+            // ★ 수정됨: 공이 '진짜로 패들에 부딪혀서 튕겨 낼 때'만 코스트가 오르도록 안쪽으로 이동!
+            paddleHitCount++;
         }
-        paddleHitCount++;
     }
 }
 
@@ -1807,9 +1813,64 @@ resumeBtn.addEventListener("click",()=>{
 startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
     currentStage = 0; 
     switchScreen(stageSelectModal); 
+    
     stageItemBtns.forEach(btn => { //선택가능한 스테이지 목록 갱신
-        if(maxStage >= Number(btn.value)) btn.classList.remove("disable");
-    });});
+        let stageNum = Number(btn.getAttribute("value") || btn.value); 
+        
+        if (maxStage >= stageNum) {
+            btn.classList.remove("disable");
+        }
+        
+        // 버튼의 원래 텍스트 백업 (최초 1회만)
+        let originalText = btn.getAttribute("data-original-text");
+        if (!originalText) {
+            originalText = btn.innerHTML; 
+            btn.setAttribute("data-original-text", originalText);
+        }
+        
+        // ★ 스테이지별 최고 기록(객체) 가져오기
+        let bestRecord = highestGrades[stageNum];
+        if (bestRecord) {
+            // 학점에 따른 색상 부여
+            let gradeColor = (bestRecord.grade.includes("A")) ? "#FFD700" : (bestRecord.grade.includes("B")) ? "#2ECC71" : "#E74C3C";
+            // ★ [normal A] 형식으로 영어 난이도명과 함께 출력!
+            btn.innerHTML = `${originalText} <span style="color:${gradeColor}; font-weight:bold; margin-left:10px; font-family:'Galmuri11', sans-serif;">[${bestRecord.diff} ${bestRecord.grade}]</span>`;
+        } else {
+            // 기록이 없으면 원래 이름만 출력
+            btn.innerHTML = originalText;
+        }
+    });
+});startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
+    currentStage = 0; 
+    switchScreen(stageSelectModal); 
+    
+    stageItemBtns.forEach(btn => { //선택가능한 스테이지 목록 갱신
+        let stageNum = Number(btn.getAttribute("value") || btn.value); 
+        
+        if (maxStage >= stageNum) {
+            btn.classList.remove("disable");
+        }
+        
+        // 버튼의 원래 텍스트 백업 (최초 1회만)
+        let originalText = btn.getAttribute("data-original-text");
+        if (!originalText) {
+            originalText = btn.innerHTML; 
+            btn.setAttribute("data-original-text", originalText);
+        }
+        
+        // ★ 스테이지별 최고 기록(객체) 가져오기
+        let bestRecord = highestGrades[stageNum];
+        if (bestRecord) {
+            // 학점에 따른 색상 부여
+            let gradeColor = (bestRecord.grade.includes("A")) ? "#FFD700" : (bestRecord.grade.includes("B")) ? "#2ECC71" : "#E74C3C";
+            // ★ [normal A] 형식으로 영어 난이도명과 함께 출력!
+            btn.innerHTML = `${originalText} <span style="color:${gradeColor}; font-weight:bold; margin-left:10px; font-family:'Galmuri11', sans-serif;">[${bestRecord.diff} ${bestRecord.grade}]</span>`;
+        } else {
+            // 기록이 없으면 원래 이름만 출력
+            btn.innerHTML = originalText;
+        }
+    });
+});
 closeStageBtn.addEventListener("click", ()=>{ switchScreen(mainScreen); }); //스테이지 창 닫기
 difficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "flex"; }); //난이도 창 열기
 closeDifficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "none"; }); //난이도 창 닫기
@@ -1826,12 +1887,15 @@ stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
 diffItemBtns.forEach(btn => { //난이도 변경 이벤트
     btn.addEventListener("click", (e) => {
         const level = e.currentTarget.getAttribute("value");
+        
+        currentDifficulty = level; // ★ 핵심: 이 부분이 빠져있어서 계속 normal로 들어갔습니다!
+        
         const selectLevel = diff[level];
         targetPaddleWidth = selectLevel.paddleWidth * 10; 
         ballSpeed = selectLevel.speed; 
         diffItemBtns.forEach(b => b.classList.remove("active"));
         e.currentTarget.classList.add("active");
-        console.log(`난이도 변경 완료! 현재 속도: ${ballSpeed}, 패들 크기: ${targetPaddleWidth}`);
+        console.log(`난이도 변경 완료! 난이도: ${currentDifficulty}, 속도: ${ballSpeed}, 패들 크기: ${targetPaddleWidth}`);
     });
 });
 optionBtn.addEventListener("click",()=>{ //옵션창 열기
@@ -1919,23 +1983,33 @@ function calculateGrade(score, isDead) {
     if (score >= 30) return "C+";
     return "C"; // 29점 이하 (20점 이하 포함)
 }
-
-// === 게임 오버 처리 함수 (죽었을 때 F 학점 렌더링) ===
+// === 게임 오버 처리 함수 ===
 function endGame(message) {
     isGameOver = true; 
     isGameStarted = false; 
     
-    // isDead 자리에 true를 전달하여 F학점 발급
     let finalGrade = calculateGrade(0, true);
+    
+    // ★ 죽어서 F학점을 받으면 가중치를 0으로 주어 기존의 성공 기록(A~C)을 덮어씌우지 않게 보호
+    let currentRecordScore = (finalGrade === "F") ? 0 : diffRank[currentDifficulty] + gradeRank[finalGrade];
+    let prevRecord = highestGrades[currentStage];
+    
+    // 기존 기록이 없거나, 새 기록의 가중치 점수가 더 높을 때만 갱신
+    if (!prevRecord || currentRecordScore > prevRecord.score) {
+        highestGrades[currentStage] = { 
+            diff: currentDifficulty, 
+            grade: finalGrade, 
+            score: currentRecordScore 
+        };
+    }
     
     gameOverMessage.innerHTML = `${message}<br><br><span style="color:#E74C3C; font-size:32px;">성적 : ${finalGrade}</span>`;
     switchScreen(gameOverScreen); 
 }
 
-
-// === 스테이지 클리어 제어 함수  ===
+// === 스테이지 클리어 제어 함수 ===
 function StageClear() { 
-    if (currentStage === 1) { // 이산수학 미니 스테이지의 경우 (맵 3번 통과해야함)
+    if (currentStage === 1) { 
         clearCount++;
         if (clearCount < gateStageCount) {                           
             bricks = []; brokenBricksCount = 0; totalBricks = 0;
@@ -1946,20 +2020,31 @@ function StageClear() {
             clearCount = 0;
         }
     }
-    // 일반 스테이지이거나 이산수학 최종 보스까지 깼을 경우
     clearGame(); 
 }
+
 // === 게임 클리어 처리 함수 ===
 function clearGame(){
     isGameOver = true; 
     isGameStarted = false; 
     isCleared = true;
     
-    // 상단에 표시되던 100점 만점 SCORE를 가져와서 학점으로 변환!
     let finalScore = getCalculatedScore();
     let finalGrade = calculateGrade(finalScore, false); 
     
-    // A는 금색, B는 초록색, C와 F는 빨간색
+    // ★ 무조건 더 높은 난이도를 우대하는 점수 계산 (예: gosu C(302점)가 normal A+(207점)를 이김)
+    let currentRecordScore = diffRank[currentDifficulty] + gradeRank[finalGrade];
+    let prevRecord = highestGrades[currentStage];
+    
+    // 더 높은 난이도이거나, 같은 난이도에서 학점이 더 높을 때 갱신
+    if (!prevRecord || currentRecordScore > prevRecord.score) {
+        highestGrades[currentStage] = { 
+            diff: currentDifficulty, 
+            grade: finalGrade, 
+            score: currentRecordScore 
+        };
+    }
+    
     let gradeColor = (finalGrade.includes("A")) ? "#FFD700" : (finalGrade.includes("B")) ? "#2ECC71" : "#E74C3C";
     
     const scoreDisplay = document.getElementById("scoreDisplay");
