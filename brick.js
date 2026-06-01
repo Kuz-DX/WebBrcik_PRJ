@@ -1568,7 +1568,7 @@ function loadDSStage4(treeDepth = 4) {
 // === 스테이지 5: 웹프로그래밍 ===
 function loadWebprogrammingStage(){
     startScene("startWebprogramming");
-    // canvas.style.backgroundImage = "url(./testImg/Web.png)"; // 배경 이미지 (필요시 변경)
+    canvas.style.backgroundImage = "url(./testImg/WebProgramming.png)"; // 배경 이미지 (필요시 변경)
     if (typeof resizeGame === 'function') {
         resizeGame(800, 600);
     }
@@ -1795,6 +1795,7 @@ function showDialogue() {
             questBox.style.backgroundColor = "rgba(0, 0, 0, 1)";
             speakerEl.style.backgroundColor = "rgba(0, 0, 0, 1)";
             questBox.style.color = "#ffd700";
+            dialogueEl.style.color = "#fff";
             break;
         case "lunchEnd":
             currentStage++;
