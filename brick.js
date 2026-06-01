@@ -73,7 +73,7 @@ let paddleWidth = 100;
 let targetPaddleWidth = 100;
 
 // 벽돌 기본 사이즈, 간격
-const brickWidth = 80;
+const brickWidth = canvas.width / 3;
 const brickHeight = 20;
 const brickPadding = 10;
 const brickOffsetTop = 100;
@@ -1114,6 +1114,7 @@ function loadStage(stageIndex){
 // === 스테이지 0: 튜토리얼 ===
 function loadTutorialStage(){
     startScene("intro");
+    resizeGame(800,600);    
     const brickRowCount = 4;
     const brickColumnCount = 6;
     const colors = ["#FF0000", "#FF7F00", "#FFFF00", "#00FF00"];
@@ -1138,6 +1139,7 @@ function loadTutorialStage(){
 
 // === 스테이지 1: 이산수학 ===
 function randomDiscreteMap() { 
+    resizeGame(800,600);
     const Gates = Object.keys(statusMap).filter(key => statusMap[key].operation);
     const randomGate = Gates[Math.floor(Math.random() * Gates.length)];
 
@@ -1187,7 +1189,7 @@ function randomBossMap() {
 function loadDiscreteStage() {
     startScene("startDiscrete");
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
-    resizeGame(700, 550);
+
 
     const map = randomDiscreteMap();
     const brickRowCount = map.length;
@@ -1232,7 +1234,7 @@ function loadDiscreteStage() {
 function loadOopStage() {
     startScene("startOop");
     canvas.style.backgroundImage = "url(./testImg/Oop.png)";
-    if (typeof resizeGame === 'function') resizeGame(800, 600);
+    if (typeof resizeGame === 'function') resizeGame(1000, 800);
 
     const rows = 7; const cols = 7;
     const layerPositions = { 1: [], 2: [], 3: [], 4: [] };
@@ -1305,7 +1307,7 @@ function loadOopStage() {
             blockPool.push({ type: "protected_B", text: "protected string B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
             while (blockPool.length < numBlocks) blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
         } else if (layer === 1) { 
-            blockPool.push({ type: "BOSS", text: "BOSS", color: COLOR_BOSS, hp: 15, indestructible: false });
+            blockPool.push({ type: "BOSS", text: "BOSS", color: COLOR_BOSS, hp: 10, indestructible: false });
         }
 
         for (let i = blockPool.length - 1; i > 0; i--) {
@@ -1381,8 +1383,8 @@ function loadLunchStage(){
 function loadDSStage4(treeDepth = 4) {
     startScene("startDataStructure");
     canvas.style.backgroundImage = "url(./testImg/Ds.png)";
-    if (typeof resizeGame === 'function') resizeGame(1210, 650); 
-    
+    resizeGame(canvas.width*1.2,canvas.height);
+
     const startY = 80, gapY = 80, centerX = canvas.width / 2;
     const getRandomEffect = (blockX, blockY, blockWidth, blockHeight) => {
         const weightedEffects = [
@@ -1418,7 +1420,7 @@ function loadDSStage4(treeDepth = 4) {
         for (let i = 0; i < numNodes; i++) {
             let nodeCenterX = startX + i * gapX;
             if (level === treeDepth - 1) {
-                let bWidth = brickWidth * 1.5;
+                let bWidth = brickWidth ;
                 let blockX = nodeCenterX - bWidth / 2;
                 let isStack = (i % 2 === 0);
                 let dsType = isStack ? "stack" : "queue";
@@ -1443,7 +1445,7 @@ function loadWebprogrammingStage(){
     startScene("startWebprogramming");
     // canvas.style.backgroundImage = "url(./testImg/Web.png)"; // 배경 이미지 (필요시 변경)
     if (typeof resizeGame === 'function') {
-        resizeGame(800, 600);
+        resizeGame(1000, 800);
     }
     
     currentWebPhase = 1; // 페이즈 초기화
@@ -1465,19 +1467,19 @@ function loadWebPhase1() {
     resetBallAndPaddle(); 
 
     // 1. 메인 보스 (HTML UI)
-    let feBoss = new BossBrick(340, 60, { 
+    let feBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
         color: "#E44D26", text: "색상 출력하기 테이블", hp: 10, realType: "BOSS",
-        width: 120, height: 80,
+        width: canvas.width*0.2, height: canvas.height*0.15,
         effectFunc: () => { checkWebPhaseClear(); } 
     });
     bricks.push(feBoss);
 
     // 2. '출력하기' 버튼 블록 (행 단위 공백 체크 및 단일 행 생성)
-    let createBtn = new Brick(220, 180, {
-        color: "#3498DB", text: "출력하기", width: 140, height: 40,
+    let createBtn = new Brick(canvas.width*0.3, canvas.height*0.25, {
+        color: "gray", text: "출력하기", width:canvas.width*0.2 , height: canvas.height*0.05,
         effectFunc: function() {
             const colors = ["#800000", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#0000FF", "#800080"];
-            const rowYs = [260, 300, 340]; // 1행, 2행, 3행의 가상 Y축 좌표 배열
+            const rowYs = [canvas.height*0.4, canvas.height*0.45, canvas.height*0.5]; // 1행, 2행, 3행의 가상 Y축 좌표 배열
             let blockW = 80;
             let gap = 15;
             let startX = (canvas.width - (colors.length * blockW + (colors.length - 1) * gap)) / 2;
@@ -1523,8 +1525,8 @@ function loadWebPhase1() {
     bricks.push(createBtn);
 
     // 3. '없애기' 버튼 블록 (개수와 상관없이 모든 색상 블록 일괄 제거)
-    let removeBtn = new Brick(440, 180, {
-        color: "#E74C3C", text: "없애기", width: 140, height: 40,
+    let removeBtn = new Brick(canvas.width*0.5, canvas.height*0.25, {
+        color: "lightgray", text: "없애기", width: canvas.width*0.2, height: canvas.height*0.05,
         effectFunc: function() {
             let removedCount = 0;
             // 실시간으로 캔버스에 존재하는 모든 COLOR_BLOCK을 강제 파괴 상태로 전환
@@ -1556,12 +1558,14 @@ function loadWebPhase2() {
 
     console.log("웹 프로그래밍 2페이즈: JS가동");
     startScene("startWebprogammingP2");
-    let beBoss = new BossBrick(350, 100, { 
+    let beBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
         // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
    //     imageSrc: "./testImg/be_boss.png", 
         color: "#2ECC71", text: "Node.js API", hp: 50, realType: "BOSS",
+        width: canvas.width*0.2, height: canvas.height*0.15,
         effectFunc: () => { checkWebPhaseClear(); } 
     });
+
     beBoss.width = 140;
     beBoss.height = 90;
     bricks.push(beBoss);    
@@ -1707,18 +1711,81 @@ function resizeGame(newWidth, newHeight) {
     x = newWidth / 2; y = newHeight - 30;
 }
 
+// 💡 창 크기에 맞춰 물리 해상도를 유지한 채 화면 스타일(CSS)만 축소/확대하는 함수
+function fitWindowSize() {
+    const container = document.getElementById("gameContainer");
+    if (!container) return;
+
+    // 현재 스테이지가 요구하는 내부 고유 해상도 기준점 추출 (예: 800x600, 1210x650 등)
+    const nativeWidth = canvas.width;
+    const nativeHeight = canvas.height;
+
+    // 현재 브라우저 창의 여백을 제외한 가용 최대 범위 계산
+    const maxWidth = window.innerWidth - 40;
+    const maxHeight = window.innerHeight - 40;
+
+    // 가로 비율, 세로 비율 중 더 많이 축소되어야 하는 한계 비율(scale) 도출
+    const ratioX = maxWidth / nativeWidth;
+    const ratioY = maxHeight / nativeHeight;
+    const scale = Math.min(ratioX, ratioY); 
+
+    // 종횡비를 엄격하게 수호하는 최적의 가변 크기 계산
+    const newStyleWidth = nativeWidth * scale;
+    const newStyleHeight = nativeHeight * scale;
+
+    // 1. 컨테이너 및 캔버스의 디스플레이 크기 조절 (물리 좌표계는 고정되어 안전함)
+    container.style.width = newStyleWidth + "px";
+    container.style.height = newStyleHeight + "px";
+    canvas.style.width = newStyleWidth + "px";
+    canvas.style.height = newStyleHeight + "px";
+
+    // 2. 메인 화면 오버레이 스케일 동기화
+    if (mainScreen) {
+        mainScreen.style.width = newStyleWidth + "px";
+        mainScreen.style.height = newStyleHeight + "px";
+    }
+}
+
+// 💡 기존 resizeGame 함수가 내부 해상도를 세팅할 때도 자동으로 가변 스타일을 계산하도록 트리거 연동
+function resizeGame(newWidth, newHeight) {
+    canvas.width = newWidth; canvas.height = newHeight;
+    
+    // 원래 있던 하드코딩 스타일 코드들은 삭제하거나 무시해도 됩니다. 
+    // 아래 fitWindowSize()가 창 크기에 맞춘 완벽한 가변 처리를 전담합니다.
+    paddleX = (newWidth - paddleWidth) / 2; 
+    x = newWidth / 2; y = newHeight - 30;
+
+    fitWindowSize(); 
+}
+
+// 💡 윈도우 리사이즈 이벤트 리스너 등록
+window.addEventListener("resize", fitWindowSize);
+
 // 이벤트 핸들러
+// [7. UI 제어 영역의 마우스 이동 핸들러 수정]
 function mouseMoveHandler(e) {
-    const relativeX = e.clientX - canvas.getBoundingClientRect().left;
+    const rect = canvas.getBoundingClientRect();
+    // 💡 핵심: 축소된 CSS 픽셀 크기 대비 실제 내부 해상도 비율을 계산하여 마우스 좌표 보정
+    const canvasScaleX = canvas.width / rect.width;
+    const relativeX = (e.clientX - rect.left) * canvasScaleX;
+
     if(relativeX > 0 && relativeX < canvas.width) {
         paddleX = relativeX - paddleWidth / 2;
         if (paddleX < 0) paddleX = 0;
         if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
     }
 }
-function clickBombHandler(e) { //폭탄 클릭 핸들러
-    const relativeX = e.clientX - canvas.getBoundingClientRect().left;
-    const relativeY = e.clientY - canvas.getBoundingClientRect().top;
+
+// [7. UI 제어 영역의 폭탄 클릭 핸들러 수정]
+function clickBombHandler(e) {
+    const rect = canvas.getBoundingClientRect();
+    // 💡 가로/세로 축소 비율을 각각 계산하여 정밀한 클릭 판정 동기화
+    const canvasScaleX = canvas.width / rect.width;
+    const canvasScaleY = canvas.height / rect.height;
+
+    const relativeX = (e.clientX - rect.left) * canvasScaleX;
+    const relativeY = (e.clientY - rect.top) * canvasScaleY;
+
     for (let i = 0; i < bombs.length; i++) {
         let b = bombs[i];
         if (b.isActive) {
@@ -1727,6 +1794,8 @@ function clickBombHandler(e) { //폭탄 클릭 핸들러
         }
     }
 }
+
+
 function cheatKeyHandler(e) {
     if (e.key === 'z' || e.key === 'Z') {
         if (currentStage !== 2) { currentStage = 2; initGame(); }
@@ -1795,7 +1864,7 @@ mainBtn.forEach((item)=>{
         switchScreen(mainScreen); // 메인 화면
         gamePauseScreen.style.display = "none";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        resizeGame(600,400);
+        resizeGame(800,600);
         canvas.style.backgroundImage = "";
     });
 });
@@ -2011,7 +2080,7 @@ function initGame() {
         clearTimeout(opacityTimeoutId); opacityTimeoutId = null;
     }
     
-    resizeGame(600,400); //화면 사이즈 조정
+    resizeGame(800,800); //화면 사이즈 조정
     switchScreen(); // UI 숨기기
     gamePauseScreen.style.display = "none";
     loadStage(currentStage);
