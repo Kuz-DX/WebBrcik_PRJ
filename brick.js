@@ -98,7 +98,7 @@ let bossBombTimer = 0;   // 보스 폭탄 생성 타이머
 // ==========================================
 // 2. 게임 데이터 및 상수 (난이도, 스토리, 상태맵)
 // ==========================================
-const gateStageCount = 4; //이산수학 게이트 스테이지 수(마지막은 회로)
+const gateStageCount = 3; //이산수학 게이트 스테이지 수(마지막은 회로)
 
 const statusMap = {
     "T":    { color: "#48dd57", effectFunc: tfHit },
@@ -167,6 +167,7 @@ class Bomb { //폭탄배열
             // 2페이즈에서는 게임오버 대신 체력 감소
             if (currentStage === 5 && currentWebPhase === 2) {
                 playerHp--;
+                paddleHitCount += 10;
                 if (playerHp <= 0) {
                     endGame("체력이 모두 소진되었습니다. 게임 오버!");
                 }
@@ -616,6 +617,7 @@ function updateBall(){
     // 3. 바닥 충돌 (게임오버 방지 및 체력 감소)
     if(y + dy > canvas.height - ballRadius) {
         playerHp--;
+        paddleHitCount += 10; //cost 10 증가
         if (playerHp <= 0) {
             endGame("체력이 모두 소진되었습니다. 게임 오버!");
         } else {
@@ -802,15 +804,112 @@ function drawSpecialBalls() {
     }
 }
 
-function drawPlayerHp() {
-    ctx.fillStyle = "#FF0000";
-    ctx.font = "bold 16px 'Galmuri11', sans-serif";
-    ctx.textAlign = "left";
+// 점수 계산 및 상단 UI(Score, 진행바, HP) 통합 그리기 함수
+function drawTopUI() {
+    // 공통 폰트 베이스 설정
     ctx.textBaseline = "top";
-    let hpText = "♥".repeat(Math.max(0, playerHp));
-    ctx.fillText(`HP : ${hpText}`, 15, 15);
-}
+    
+    // ==========================================
+    // 1. HP 영역 (좌측)
+    // ==========================================
+    ctx.textAlign = "left"; 
+    ctx.font = "16px 'Galmuri11', 'Press Start 2P', sans-serif"; 
+    
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#000000";
+    ctx.strokeText("HP:", 15, 18);
+    ctx.fillStyle = "#FFFFFF";
+    ctx.fillText("HP:", 15, 18);
 
+    let heartStartX = 55; 
+    let hpCount = Math.max(0, playerHp);
+    for(let i = 0; i < hpCount; i++) {
+        let hx = heartStartX + (i * 20);
+        ctx.strokeText("♥", hx, 18);
+        ctx.fillStyle = "#FF0000";   
+        ctx.fillText("♥", hx, 18);
+    }
+
+    // ==========================================
+    // 2. SCORE 영역 (우측)
+    // ==========================================
+    let currentScore = getCalculatedScore();
+    let scoreText = `SCORE: ${(currentScore || 0).toFixed(1)}`;
+    
+    ctx.textAlign = "right"; 
+    ctx.font = "16px 'Galmuri11', 'Press Start 2P', sans-serif"; 
+    
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+    ctx.strokeText(scoreText, canvas.width - 15, 18);
+    
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = "#000000";
+    ctx.strokeText(scoreText, canvas.width - 15, 18);
+    
+    ctx.fillStyle = "#FFD700";
+    ctx.fillText(scoreText, canvas.width - 15, 18);
+
+
+    // ==========================================
+    // 3. PROGRESS BAR 영역 (중앙)
+    // ==========================================
+    let remainingRatio = 1;
+    if (totalBricks > 0 && totalBricks < 9000) {
+        remainingRatio = Math.max(0, (totalBricks - brokenBricksCount) / totalBricks);
+    } else if (totalBricks >= 9000) {
+        let boss = bricks.find(b => b.realType === "BOSS");
+        if (boss) remainingRatio = Math.max(0, boss.hp / boss.maxHp);
+    }
+
+    const barWidth = 200; 
+    const barHeight = 8; 
+    // 글씨 공간을 위해 바 중심을 살짝 왼쪽으로 배치
+    const barX = (canvas.width - barWidth) / 2 - 15; 
+    const barY = 22; 
+
+    // 미니 스테이지 진척도
+    let progressText = "";
+    if (currentStage === 1) progressText = `MAP: ${clearCount + 1}/${gateStageCount}`;
+    else if (currentStage === 5) progressText = `PHASE: ${currentWebPhase}/3`;
+    
+    if (progressText !== "") {
+        ctx.textAlign = "right"; // 바(Bar)의 왼쪽 끝을 기준으로 정렬
+        ctx.font = "12px 'Galmuri11', 'Press Start 2P', sans-serif";
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#000000";
+        ctx.strokeText(progressText, barX - 15, 20); // HP 높이와 균형을 맞춘 Y좌표(20)
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillText(progressText, barX - 15, 20);
+    }
+
+    // 바 배경
+    ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+    ctx.fillRect(barX, barY, barWidth, barHeight);
+
+    // 바 채우기
+    let fillWidth = barWidth * remainingRatio;
+    ctx.fillStyle = "#FFA500"; 
+    ctx.fillRect(barX, barY, fillWidth, barHeight);
+
+    // 바 테두리
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#000000";
+    ctx.strokeRect(barX, barY, barWidth, barHeight);
+
+    // 퍼센트 글씨 (바 우측에 테두리 추가)
+    let percentText = `${Math.floor(remainingRatio * 100)}%`;
+    ctx.textAlign = "left"; 
+    ctx.textBaseline = "middle";
+    ctx.font = "12px 'Galmuri11', 'Press Start 2P', sans-serif"; 
+    
+    // 테두리 적용
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#000000";
+    ctx.strokeText(percentText, barX + barWidth + 10, barY + barHeight / 2);
+    ctx.fillStyle = "#FFFFFF"; // 가독성과 일관성을 위해 흰색으로 통일
+    ctx.fillText(percentText, barX + barWidth + 10, barY + barHeight / 2);
+}
 
 // ==========================================
 // 5. 화면 렌더링 (그리기 전담 함수들)
@@ -1145,7 +1244,7 @@ function loadOopStage() {
     }
 
     const totalBlockWidth = cols * (brickWidth + brickPadding) - brickPadding;
-    const { startX, startY } = calculateCenterOffset(rows, cols, -40);
+    const { startX, startY } = calculateCenterOffset(rows, cols, -70);
     const blockGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
 
     const COLOR_PUBLIC    = "#3498DB"; 
@@ -1282,7 +1381,7 @@ function loadLunchStage(){
 function loadDSStage4(treeDepth = 4) {
     startScene("startDataStructure");
     canvas.style.backgroundImage = "url(./testImg/Ds.png)";
-    if (typeof resizeGame === 'function') resizeGame(1280, 800); 
+    if (typeof resizeGame === 'function') resizeGame(1210, 650); 
     
     const startY = 80, gapY = 80, centerX = canvas.width / 2;
     const getRandomEffect = (blockX, blockY, blockWidth, blockHeight) => {
@@ -1303,7 +1402,7 @@ function loadDSStage4(treeDepth = 4) {
         return () => {};
     };
 
-    let leafGap = 150; 
+    let leafGap = 120; 
     const maxLeaves = Math.pow(2, treeDepth - 1); 
     if (maxLeaves > 1) {
         const maxAllowedGap = (canvas.width - 140) / (maxLeaves - 1);
@@ -1766,48 +1865,89 @@ closeHowToPlayBtn.addEventListener("click",()=>{
     switchScreen(mainScreen);
 });
 
-// ==========================================
+
+
 // 8. 메인 엔진 (게임 루프 및 초기화)
 // ==========================================
-function StageClear() { //클리어 제어 분리
-    if (currentStage === 1) { // 이산수학 미니 스테이지의 경우
-        clearCount++;
-        if (clearCount < gateStageCount) {                           
-            bricks = []; brokenBricksCount = 0; totalBricks = 0;
-            resetBallAndPaddle(); // 공, 패들 위치 초기화
-            loadDiscreteStage(); // 다음 미니 스테이지/보스 로드
-            return;
-        } else clearCount = 0;
-    }
-    clearGame(); // 그 외 일반 스테이지 완전 클리어 시
-}
 
-// 게임 종료/클리어 처리 함수
-function endGame(message) {
-    isGameOver = true; isGameStarted = false;
-    gameOverMessage.innerText = message;
-    switchScreen(gameOverScreen); 
-}
-// === 스테이지별 학점(Score) 계산 함수 ===
-function calculateGrade(stage, cost) {
-    if (stage === 3) return "A+"; // 점심시간은 무조건 A+ 
+// === 실시간 점수(100점 만점) 계산 함수 (커트라인 기반 자동 보간) ===
+function getCalculatedScore() {
+    if (currentStage === 3) return 100; // 점심시간은 무조건 100점(A+)
+
     let cutlines;
-    // 배열 순서대로 [A+, A, B+, B, C+] 커트라인 (단위: cost 횟수)
-    switch(stage) {
-        case 0: cutlines = [15, 20, 25, 30, 35]; break;       // 튜토리얼
-        case 1: cutlines = [15, 25, 35, 45, 55]; break;     // 이산수학
-        case 2: cutlines = [20, 30, 40, 50, 65]; break;     // 객체지향
-        case 4: cutlines = [15, 25, 35, 45, 60]; break;     // 자료구조
-        case 5: cutlines = [70, 85, 100, 115, 130]; break;  // 웹프로그래밍
+    switch(currentStage) {
+        case 0: cutlines = [18, 24, 30, 35, 50]; break; //튜토    
+        case 1: cutlines = [29, 35, 45, 55, 65]; break; //이산
+        case 2: cutlines = [20, 30, 40, 50, 65]; break; //객지프
+        case 4: cutlines = [15, 25, 35, 45, 60]; break; //자구
+        case 5: cutlines = [70, 85, 100, 115, 130]; break; //웹프
         default: cutlines = [20, 30, 40, 50, 60];
     }
 
-    if (cost <= cutlines[0]) return "A+";
-    if (cost <= cutlines[1]) return "A";
-    if (cost <= cutlines[2]) return "B+";
-    if (cost <= cutlines[3]) return "B";
-    if (cost <= cutlines[4]) return "C+";
-    return "C";
+    let cost = paddleHitCount;
+    let score = 100;
+
+    // cost가 커트라인을 넘을 때마다 부드럽게 깎임 (소수점 유지)
+    if (cost <= cutlines[0]) {
+        score = 100 - (15 * (cost / cutlines[0])); 
+    } else if (cost <= cutlines[1]) {
+        score = 85 - (15 * ((cost - cutlines[0]) / (cutlines[1] - cutlines[0]))); 
+    } else if (cost <= cutlines[2]) {
+        score = 70 - (15 * ((cost - cutlines[1]) / (cutlines[2] - cutlines[1]))); 
+    } else if (cost <= cutlines[3]) {
+        score = 55 - (15 * ((cost - cutlines[2]) / (cutlines[3] - cutlines[2]))); 
+    } else if (cost <= cutlines[4]) {
+        score = 40 - (10 * ((cost - cutlines[3]) / (cutlines[4] - cutlines[3]))); 
+    } else {
+        // ★ C등급 이하 (30점 미만) 구간: 코스트 1당 0.3점씩 일정하게 감소
+        score = 30 - ((cost - cutlines[4]) * 0.3);
+    }
+
+    // 최하점은 0점으로 방어 (Math.floor 삭제하여 소수점 데이터 보존)
+    return Math.max(0, score); 
+}
+
+// === 점수 기반 학점 변환 함수 ===
+function calculateGrade(score, isDead) {
+    if (isDead) return "F"; // 죽으면 점수와 무관하게 얄짤없이 F
+    
+    // 유저님이 지정해주신 점수 컷!
+    if (score >= 85) return "A+";
+    if (score >= 70) return "A";
+    if (score >= 55) return "B+";
+    if (score >= 40) return "B";
+    if (score >= 30) return "C+";
+    return "C"; // 29점 이하 (20점 이하 포함)
+}
+
+// === 게임 오버 처리 함수 (죽었을 때 F 학점 렌더링) ===
+function endGame(message) {
+    isGameOver = true; 
+    isGameStarted = false; 
+    
+    // isDead 자리에 true를 전달하여 F학점 발급
+    let finalGrade = calculateGrade(0, true);
+    
+    gameOverMessage.innerHTML = `${message}<br><br><span style="color:#E74C3C; font-size:32px;">성적 : ${finalGrade}</span>`;
+    switchScreen(gameOverScreen); 
+}
+
+
+// === 스테이지 클리어 제어 함수  ===
+function StageClear() { 
+    if (currentStage === 1) { // 이산수학 미니 스테이지의 경우 (맵 3번 통과해야함)
+        clearCount++;
+        if (clearCount < gateStageCount) {                           
+            bricks = []; brokenBricksCount = 0; totalBricks = 0;
+            resetBallAndPaddle(); 
+            loadDiscreteStage(); 
+            return; 
+        } else {
+            clearCount = 0;
+        }
+    }
+    // 일반 스테이지이거나 이산수학 최종 보스까지 깼을 경우
+    clearGame(); 
 }
 // === 게임 클리어 처리 함수 ===
 function clearGame(){
@@ -1815,41 +1955,33 @@ function clearGame(){
     isGameStarted = false; 
     isCleared = true;
     
-    // score 계산
-    let finalGrade = calculateGrade(currentStage, paddleHitCount);
-    // A 금색, B 초록색, C 빨간색
+    // 상단에 표시되던 100점 만점 SCORE를 가져와서 학점으로 변환!
+    let finalScore = getCalculatedScore();
+    let finalGrade = calculateGrade(finalScore, false); 
+    
+    // A는 금색, B는 초록색, C와 F는 빨간색
     let gradeColor = (finalGrade.includes("A")) ? "#FFD700" : (finalGrade.includes("B")) ? "#2ECC71" : "#E74C3C";
-    // HTML에 성적 텍스트와 색상 주입 및 표시
+    
     const scoreDisplay = document.getElementById("scoreDisplay");
     if(scoreDisplay) {
         scoreDisplay.innerText = finalGrade;
         scoreDisplay.style.color = gradeColor;
         scoreDisplay.style.display = "block";
     }
+
     switch(currentStage){
-        case 0:
-            startScene("clearC_programming"); //클리어 대화 출력
-            break;
-        case 1:
-            startScene("clearDiscrete");
-            break;
-        case 2:
-            startScene("clearOop");
-            break;
-        case 3:
-            break;
-        case 4:
-            startScene("clearDataStructure");
-            break;
-        case 5:
-            startScene("ending");
-            break;
+        case 0: startScene("clearC_programming"); break;
+        case 1: startScene("clearDiscrete"); break;
+        case 2: startScene("clearOop"); break;
+        case 3: break;
+        case 4: startScene("clearDataStructure"); break;
+        case 5: startScene("ending"); break;
     }
+    
     currentStage++;
     if (currentStage > maxStage) maxStage = currentStage;
     switchScreen(gameClearScreen); 
     clearBtns.style.visibility = "hidden";
-    
 }
 
 function resetBallAndPaddle() { //공, 패들 리셋 함수
@@ -1899,7 +2031,7 @@ function loop() {
     drawPaddle();
     drawBombs();
     drawSpecialBalls();
-    drawPlayerHp();
+    drawTopUI();
 
     if(isGameStarted){ //게임 시작 시에만 작동
         if(currentStage == 1) updateCircuits(); //이산스테이지 출력 변화
