@@ -82,6 +82,7 @@ const brickOffsetLeft = 35;
 // 게임 오브젝트 및 진행 상황 카운터
 let bricks = [];
 let bombs = [];          // 폭탄들을 저장할 배열
+let fBombs = [];           // 하늘에서 떨어지는 F 배열
 let currentStage = 0;    // 현재 진행 중인 스테이지 번호
 let maxStage = 5;        // 최대 진행 스테이지 변수
 let clearCount = 0;      // 이산수학 미니 스테이지 클리어 수
@@ -90,9 +91,15 @@ let totalBricks = 0;     // 스테이지마다 깨야 할 목표 벽돌 개수
 let paddleHitCount = 0;  // 패들에 공이 부딪힌 횟수(cost)
 let currentWebPhase = 0; // 웹 프로그래밍 페이즈 관리 변수
 let playerHp = 3;        // 플레이어 체력 변수
+let highestGrades = {}; // 스테이지별 최고 학점(객체)을 저장
+const gradeRank = { "A+": 7, "A": 6, "B+": 5, "B": 4, "C+": 3, "C": 2, "F": 1 }; // 학점 가중치
+const diffRank = { "easy": 100, "normal": 200, "gosu": 300, "goat": 400 }; // 난이도별 가중치 (난이도 최우선)
+let currentDifficulty = "easy"; // 현재 선택된 난이도
 let specialBalls = [];   // 특수공 배열
 let specialBallTimer = 0; // 특수공 생성 타이머
 let bossBombTimer = 0;   // 보스 폭탄 생성 타이머
+let phase3StartTime = 0;   // 3페이즈 생존 타이머 시작 시간
+let phase3FSpawnTimer = 0; // F 생성 쿨타임 타이머
 
 
 // ==========================================
@@ -178,7 +185,114 @@ class Bomb { //폭탄배열
         }
     }
 }
+// === 3페이즈 전용: F 학점 폭탄 클래스 ===
+class FBomb {
+    constructor(x, y, speed) {
+        this.x = x;
+        this.y = y;
+        this.radius = 15; // 충돌 반경
+        this.dy = speed;  // 떨어지는 속도
+        this.isActive = true;
+    }
+    draw(ctx) {
+        if (!this.isActive) return;
+        ctx.fillStyle = "#E74C3C"; // 강렬한 빨간색
+        ctx.font = "bold 32px 'Galmuri11', 'Press Start 2P', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // 하얀색 테두리로 글씨를 돋보이게 렌더링
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeText("F", this.x, this.y);
+        ctx.fillText("F", this.x, this.y);
+    }
+    update() {
+        if (!this.isActive) return;
+        this.y += this.dy;
 
+        // 바닥으로 나가면 메모리에서 삭제
+        if (this.y > canvas.height + 30) this.isActive = false;
+
+        // ★ 패들 충돌 검사 (바에 맞으면 바로 F 학점 엔딩 발동!)
+        if (this.y + this.radius > canvas.height - paddleHeight && this.y - this.radius < canvas.height) {
+            if (this.x > paddleX - this.radius && this.x < paddleX + paddleWidth + this.radius) {
+                this.isActive = false;
+                triggerPhase3Ending(); // 엔딩 호출!
+            }
+        }
+    }
+}
+
+// === F 폭탄 업데이트 및 난이도 조절 (시간 흐름에 따라) ===
+function updateFBombs() {
+    // ★ 추가됨: phase3StartTime이 0일 때(로딩 전)는 연산을 멈춰서 에러를 완벽 차단!
+    if (currentStage !== 5 || currentWebPhase !== 3 || phase3StartTime === 0) return;
+
+    let elapsed = Date.now() - phase3StartTime; // 살아남은 시간(ms)
+    let spawnInterval, fallSpeed, spawnCount;
+
+    // 💡 시간에 따른 'F 학점 비' 난이도 조절
+    if (elapsed < 10000) {
+        // [0 ~ 10초] 피할 만한 수준
+        spawnInterval = 500; // 0.5초마다
+        fallSpeed = 5;       // 속도 5
+        spawnCount = 1;      // 1개씩
+    } else if (elapsed < 15000) {
+        // [10 ~ 15초] 점점 쏟아지기 시작함 (꽤 어려움)
+        spawnInterval = 200; // 0.2초마다
+        fallSpeed = 9;       // 속도 9 (빠름)
+        spawnCount = 3;      // 3개씩
+    } else {
+        // [15초 이후] 절대 못 피하는 수준 (절망의 폭우)
+        spawnInterval = 30;  // 0.03초마다
+        fallSpeed = 16;      // 속도 16 (미친 속도)
+        spawnCount = 10;     // 10개씩 무더기로
+    }
+
+    phase3FSpawnTimer += 16; // 프레임당 시간 더하기
+    if (phase3FSpawnTimer >= spawnInterval) {
+        for(let i=0; i<spawnCount; i++){
+            let randomX = Math.random() * canvas.width;
+            let f = new FBomb(randomX, -30, fallSpeed + Math.random() * 4);
+            fBombs.push(f);
+        }
+        phase3FSpawnTimer = 0;
+    }
+
+    for (let i = fBombs.length - 1; i >= 0; i--) {
+        fBombs[i].update();
+        if(!fBombs[i].isActive) fBombs.splice(i, 1);
+    }
+}
+
+// === F를 맞았을 때 엔딩을 틀어주는 함수 ===
+// === F를 맞았을 때 엔딩을 틀어주는 함수 ===
+function triggerPhase3Ending() {
+    isGameOver = true;
+    isGameStarted = false;
+    
+    // 화면에 남아있는 F 폭탄과 패들 지우기
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // ★ HTML에 있는 비디오 요소를 가져옵니다. (HTML의 비디오 ID가 'endingVideo'라고 가정)
+    let endingVideo = document.getElementById("endingVideo");
+    
+    if (endingVideo) {
+        // 1. 영상을 화면에 띄우고 재생시킵니다.
+        endingVideo.style.display = "block";
+        endingVideo.play();
+        
+        // 2. ★ 핵심: 영상 재생이 완전히 끝나는 순간(onended)을 감지합니다.
+        endingVideo.onended = function() {
+            endingVideo.style.display = "none"; // 영상 다시 숨기기
+            clearGame(); // ★ 영상이 끝난 직후에 성적 계산 및 클리어 화면(NEXT) 띄우기!
+        };
+    } else {
+        // 만약 비디오 요소가 아직 HTML에 없다면 임시로 바로 클리어 처리
+        clearGame();
+    }
+}
 //객체에서 Brick class로 변경, 속성이 많아질 거 같아 Object.assign으로 구현
 class Brick {
     constructor(x, y, option = {}) { //생성할때 x,y는 필수로 넣고 나머지는 baseSettings 에서 바꾸고 싶은것만 {}로 감싸서 넣으면 됨, 없는 속성 추가도 가능
@@ -600,13 +714,18 @@ function checkPaddleCollision() {
             
             dx = ballSpeed * Math.sin(bounceAngle);
             dy = -ballSpeed * Math.cos(bounceAngle); 
+            
+            // ★ 수정됨: 공이 '진짜로 패들에 부딪혀서 튕겨 낼 때'만 코스트가 오르도록 안쪽으로 이동!
+            paddleHitCount++;
         }
-        paddleHitCount++;
     }
 }
 
 // 공 위치 업데이트 함수
 function updateBall(){
+
+    if (currentStage === 5 && currentWebPhase === 3) return;
+
     // 1. 벽 충돌
     if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
     if(y + dy < ballRadius) dy = -dy; 
@@ -855,18 +974,24 @@ function drawTopUI() {
     // 3. PROGRESS BAR 영역 (중앙)
     // ==========================================
     let remainingRatio = 1;
-    if (totalBricks > 0 && totalBricks < 9000) {
+    
+    // 현재 맵에 보스가 있는지 탐색
+    let boss = bricks.find(b => b.realType === "BOSS");
+
+    // ★ 보스가 존재하고 해금된 상태("LOCK"이 아님)라면 진행도를 보스의 남은 체력 비율로 변경!
+    if (boss && boss.status !== "LOCK") {
+        remainingRatio = Math.max(0, boss.hp / boss.maxHp);
+    } 
+    // 그 외 일반 진행 상황 (보스가 아직 잠겨있거나 보스가 없는 스테이지)
+    else if (totalBricks > 0 && totalBricks < 9000) {
         remainingRatio = Math.max(0, (totalBricks - brokenBricksCount) / totalBricks);
-    } else if (totalBricks >= 9000) {
-        let boss = bricks.find(b => b.realType === "BOSS");
-        if (boss) remainingRatio = Math.max(0, boss.hp / boss.maxHp);
     }
 
     const barWidth = 200; 
     const barHeight = 8; 
     // 글씨 공간을 위해 바 중심을 살짝 왼쪽으로 배치
     const barX = (canvas.width - barWidth) / 2 - 15; 
-    const barY = 22; 
+    const barY = 22;
 
     // 미니 스테이지 진척도
     let progressText = "";
@@ -915,6 +1040,8 @@ function drawTopUI() {
 // 5. 화면 렌더링 (그리기 전담 함수들)
 // ==========================================
 function drawBall() {
+
+    if (currentStage === 5 && currentWebPhase === 3) return;
 
     if (ballSkinType === "image" && ballImage) {
         // 야구공, 농구공, 축구공 
@@ -1256,7 +1383,7 @@ function loadOopStage() {
     const COLOR_BOSS      = "#76941e";
     const COLOR_ADDB      = "#E87F24";
     const COLOR_SUBB      = "#FFC81E";
-    const COLOR_OPACITY   = "#F8C463"
+    const COLOR_OPACITY   = "#F8C463";
 
     for (let layer = 4; layer >= 1; layer--) {
         const positions = layerPositions[layer];
@@ -1443,7 +1570,7 @@ function loadDSStage4(treeDepth = 4) {
 // === 스테이지 5: 웹프로그래밍 ===
 function loadWebprogrammingStage(){
     startScene("startWebprogramming");
-    // canvas.style.backgroundImage = "url(./testImg/Web.png)"; // 배경 이미지 (필요시 변경)
+    canvas.style.backgroundImage = "url(./testImg/WebProgramming.png)"; // 배경 이미지 (필요시 변경)
     if (typeof resizeGame === 'function') {
         resizeGame(1000, 800);
     }
@@ -1550,14 +1677,18 @@ function loadWebPhase1() {
 // ---------------------------------------------------------
 //  Phase 2  
 // ---------------------------------------------------------
+// ---------------------------------------------------------
+//  Phase 2  
+// ---------------------------------------------------------
 function loadWebPhase2() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
-    totalBricks = 0;
+    totalBricks = 9999; // ★ 1페이즈처럼 자동 클리어 방지를 위해 9999로 고정!
     bossBombTimer = 0;
     resetBallAndPaddle();
 
     console.log("웹 프로그래밍 2페이즈: JS가동");
     startScene("startWebprogammingP2");
+
     let beBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
         // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
    //     imageSrc: "./testImg/be_boss.png", 
@@ -1569,31 +1700,31 @@ function loadWebPhase2() {
     beBoss.width = 140;
     beBoss.height = 90;
     bricks.push(beBoss);    
-
-    totalBricks++;
 }
 
 // ---------------------------------------------------------
 //  Phase 3
 // ---------------------------------------------------------
+// ---------------------------------------------------------
+//  Phase 3 : 생존형 기믹 (F 학점 폭우)
+// ---------------------------------------------------------
+// ---------------------------------------------------------
+//  Phase 3 : 생존형 기믹 (보스 없는 순수 F 학점 폭우)
+// ---------------------------------------------------------
 function loadWebPhase3() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
-    totalBricks = 0; // 💡 3페이즈는 정상 카운팅으로 복구
+    fBombs = []; // F 폭탄 초기화
+    
+    // ★ 자동 클리어 방지: 깰 수 없는 가상의 목표를 주어 시간이 끝날 때까지 버티게 만듭니다.
+    totalBricks = 9999; 
     resetBallAndPaddle();
 
-    console.log("웹 프로그래밍 2페이즈: JS가동");
+    phase3StartTime = Date.now(); // 타이머 시작!
+    phase3FSpawnTimer = 0;
 
-    let dbBoss = new BossBrick(350, 100, { 
-        // 💡 3페이즈 전용 데이터베이스 최종 보스 이미지 삽입
-      //  imageSrc: "./testImg/db_boss.png", 
-        color: "#34495E", text: "MySQL DB", hp: 10, realType: "BOSS",
-        effectFunc: () => { checkWebPhaseClear(); } 
-    });
-    dbBoss.width = 160;
-    dbBoss.height = 100;
-    bricks.push(dbBoss);
+    console.log("웹 프로그래밍 3페이즈: 보스 없는 순수 F 학점 생존 시작");
     
-    totalBricks++;
+    // ★ 보스 블록(DB Boss) 생성 코드는 완전히 삭제되었습니다!
 }
 
 function checkWebPhaseClear() {
@@ -1671,6 +1802,7 @@ function showDialogue() {
             questBox.style.backgroundColor = "rgba(0, 0, 0, 1)";
             speakerEl.style.backgroundColor = "rgba(0, 0, 0, 1)";
             questBox.style.color = "#ffd700";
+            dialogueEl.style.color = "#fff";
             break;
         case "lunchEnd":
             currentStage++;
@@ -1817,6 +1949,45 @@ document.addEventListener("mousemove", mouseMoveHandler, false);
 document.addEventListener("keydown", cheatKeyHandler, false);
 canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
 
+
+function cheatKeyHandler(e) {
+    // 기존 Z키 치트 (객체지향 스테이지 테스트용)
+    if (e.key === 'z' || e.key === 'Z') {
+        if (currentStage !== 2) { currentStage = 2; initGame(); }
+        let destroyedByCheat = 0;
+        for (let i = 0; i < bricks.length; i++) {
+            let b = bricks[i];
+            if (b.realType !== "BOSS" && b.status !== 0) {
+                b.status = 0; destroyedByCheat++;
+            } else if (b.realType === "BOSS" && b.status !== 0) {
+                b.expand(); b.hp = 15; b.status = 1;
+            }
+        }
+        brokenBricksCount += destroyedByCheat;
+    }
+    
+    // ★ 추가: R 키 치트 (웹프로그래밍 페이즈 고속 스킵용)
+    if (e.key === 'r' || e.key === 'R') {
+        if (currentStage === 5) {
+            // 1, 2페이즈: 현재 떠 있는 보스를 즉사시키고 다음 페이즈로 강제 이동
+            if (currentWebPhase === 1 || currentWebPhase === 2) {
+                let boss = bricks.find(b => b.realType === "BOSS");
+                if (boss && boss.status !== 0) {
+                    boss.hp = 0;
+                    boss.status = 0;
+                    brokenBricksCount++;
+                    boss.effectFunc(); // 다음 페이즈 로딩 함수 강제 실행
+                    console.log(`[치트 발동] ${currentWebPhase}페이즈 보스 즉사!`);
+                }
+            } 
+            // 3페이즈: F 학점 폭우 생존 기믹이므로 즉시 엔딩 발동
+            else if (currentWebPhase === 3) {
+                triggerPhase3Ending();
+                console.log("[치트 발동] 3페이즈 즉시 엔딩 씬 호출!");
+            }
+        }
+    }
+}
 window.addEventListener("keydown", (e) => {
     if (e.key === 'k') clearGame(); //클리어 화면 출력
     if (e.key === ' ' || e.key === 'Enter') { //스페이스나 엔터로 다음 창 진행
@@ -1876,9 +2047,64 @@ resumeBtn.addEventListener("click",()=>{
 startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
     currentStage = 0; 
     switchScreen(stageSelectModal); 
+    
     stageItemBtns.forEach(btn => { //선택가능한 스테이지 목록 갱신
-        if(maxStage >= Number(btn.value)) btn.classList.remove("disable");
-    });});
+        let stageNum = Number(btn.getAttribute("value") || btn.value); 
+        
+        if (maxStage >= stageNum) {
+            btn.classList.remove("disable");
+        }
+        
+        // 버튼의 원래 텍스트 백업 (최초 1회만)
+        let originalText = btn.getAttribute("data-original-text");
+        if (!originalText) {
+            originalText = btn.innerHTML; 
+            btn.setAttribute("data-original-text", originalText);
+        }
+        
+        // ★ 스테이지별 최고 기록(객체) 가져오기
+        let bestRecord = highestGrades[stageNum];
+        if (bestRecord) {
+            // 학점에 따른 색상 부여
+            let gradeColor = (bestRecord.grade.includes("A")) ? "#FFD700" : (bestRecord.grade.includes("B")) ? "#2ECC71" : "#E74C3C";
+            // ★ [normal A] 형식으로 영어 난이도명과 함께 출력!
+            btn.innerHTML = `${originalText} <span style="color:${gradeColor}; font-weight:bold; margin-left:10px; font-family:'Galmuri11', sans-serif;">[${bestRecord.diff} ${bestRecord.grade}]</span>`;
+        } else {
+            // 기록이 없으면 원래 이름만 출력
+            btn.innerHTML = originalText;
+        }
+    });
+});startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
+    currentStage = 0; 
+    switchScreen(stageSelectModal); 
+    
+    stageItemBtns.forEach(btn => { //선택가능한 스테이지 목록 갱신
+        let stageNum = Number(btn.getAttribute("value") || btn.value); 
+        
+        if (maxStage >= stageNum) {
+            btn.classList.remove("disable");
+        }
+        
+        // 버튼의 원래 텍스트 백업 (최초 1회만)
+        let originalText = btn.getAttribute("data-original-text");
+        if (!originalText) {
+            originalText = btn.innerHTML; 
+            btn.setAttribute("data-original-text", originalText);
+        }
+        
+        // ★ 스테이지별 최고 기록(객체) 가져오기
+        let bestRecord = highestGrades[stageNum];
+        if (bestRecord) {
+            // 학점에 따른 색상 부여
+            let gradeColor = (bestRecord.grade.includes("A")) ? "#FFD700" : (bestRecord.grade.includes("B")) ? "#2ECC71" : "#E74C3C";
+            // ★ [normal A] 형식으로 영어 난이도명과 함께 출력!
+            btn.innerHTML = `${originalText} <span style="color:${gradeColor}; font-weight:bold; margin-left:10px; font-family:'Galmuri11', sans-serif;">[${bestRecord.diff} ${bestRecord.grade}]</span>`;
+        } else {
+            // 기록이 없으면 원래 이름만 출력
+            btn.innerHTML = originalText;
+        }
+    });
+});
 closeStageBtn.addEventListener("click", ()=>{ switchScreen(mainScreen); }); //스테이지 창 닫기
 difficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "flex"; }); //난이도 창 열기
 closeDifficultyBtn.addEventListener("click", () => { difficultyModal.style.display = "none"; }); //난이도 창 닫기
@@ -1895,12 +2121,15 @@ stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
 diffItemBtns.forEach(btn => { //난이도 변경 이벤트
     btn.addEventListener("click", (e) => {
         const level = e.currentTarget.getAttribute("value");
+        
+        currentDifficulty = level; // ★ 핵심: 이 부분이 빠져있어서 계속 normal로 들어갔습니다!
+        
         const selectLevel = diff[level];
         targetPaddleWidth = selectLevel.paddleWidth * 10; 
         ballSpeed = selectLevel.speed; 
         diffItemBtns.forEach(b => b.classList.remove("active"));
         e.currentTarget.classList.add("active");
-        console.log(`난이도 변경 완료! 현재 속도: ${ballSpeed}, 패들 크기: ${targetPaddleWidth}`);
+        console.log(`난이도 변경 완료! 난이도: ${currentDifficulty}, 속도: ${ballSpeed}, 패들 크기: ${targetPaddleWidth}`);
     });
 });
 optionBtn.addEventListener("click",()=>{ //옵션창 열기
@@ -1988,23 +2217,33 @@ function calculateGrade(score, isDead) {
     if (score >= 30) return "C+";
     return "C"; // 29점 이하 (20점 이하 포함)
 }
-
-// === 게임 오버 처리 함수 (죽었을 때 F 학점 렌더링) ===
+// === 게임 오버 처리 함수 ===
 function endGame(message) {
     isGameOver = true; 
     isGameStarted = false; 
     
-    // isDead 자리에 true를 전달하여 F학점 발급
     let finalGrade = calculateGrade(0, true);
+    
+    // ★ 죽어서 F학점을 받으면 가중치를 0으로 주어 기존의 성공 기록(A~C)을 덮어씌우지 않게 보호
+    let currentRecordScore = (finalGrade === "F") ? 0 : diffRank[currentDifficulty] + gradeRank[finalGrade];
+    let prevRecord = highestGrades[currentStage];
+    
+    // 기존 기록이 없거나, 새 기록의 가중치 점수가 더 높을 때만 갱신
+    if (!prevRecord || currentRecordScore > prevRecord.score) {
+        highestGrades[currentStage] = { 
+            diff: currentDifficulty, 
+            grade: finalGrade, 
+            score: currentRecordScore 
+        };
+    }
     
     gameOverMessage.innerHTML = `${message}<br><br><span style="color:#E74C3C; font-size:32px;">성적 : ${finalGrade}</span>`;
     switchScreen(gameOverScreen); 
 }
 
-
-// === 스테이지 클리어 제어 함수  ===
+// === 스테이지 클리어 제어 함수 ===
 function StageClear() { 
-    if (currentStage === 1) { // 이산수학 미니 스테이지의 경우 (맵 3번 통과해야함)
+    if (currentStage === 1) { 
         clearCount++;
         if (clearCount < gateStageCount) {                           
             bricks = []; brokenBricksCount = 0; totalBricks = 0;
@@ -2015,20 +2254,31 @@ function StageClear() {
             clearCount = 0;
         }
     }
-    // 일반 스테이지이거나 이산수학 최종 보스까지 깼을 경우
     clearGame(); 
 }
+
 // === 게임 클리어 처리 함수 ===
 function clearGame(){
     isGameOver = true; 
     isGameStarted = false; 
     isCleared = true;
     
-    // 상단에 표시되던 100점 만점 SCORE를 가져와서 학점으로 변환!
     let finalScore = getCalculatedScore();
     let finalGrade = calculateGrade(finalScore, false); 
     
-    // A는 금색, B는 초록색, C와 F는 빨간색
+    // ★ 무조건 더 높은 난이도를 우대하는 점수 계산 (예: gosu C(302점)가 normal A+(207점)를 이김)
+    let currentRecordScore = diffRank[currentDifficulty] + gradeRank[finalGrade];
+    let prevRecord = highestGrades[currentStage];
+    
+    // 더 높은 난이도이거나, 같은 난이도에서 학점이 더 높을 때 갱신
+    if (!prevRecord || currentRecordScore > prevRecord.score) {
+        highestGrades[currentStage] = { 
+            diff: currentDifficulty, 
+            grade: finalGrade, 
+            score: currentRecordScore 
+        };
+    }
+    
     let gradeColor = (finalGrade.includes("A")) ? "#FFD700" : (finalGrade.includes("B")) ? "#2ECC71" : "#E74C3C";
     
     const scoreDisplay = document.getElementById("scoreDisplay");
@@ -2070,16 +2320,19 @@ function initGame() {
     isGameOver = false;
     isGameStarted = true;
     isCleared = false;
-    ballOpacity = 1.0; // 투명도 초기화
-    playerHp = 3;      // 체력 초기화
-    specialBalls = []; // 특수공 초기화
-    specialBallTimer = 0; // 특수공 생성 타이머 초기화
-    bossBombTimer = 0; // 보스 폭탄 생성 타이머 초기화
+    ballOpacity = 1.0; 
+    playerHp = 3;      
+    specialBalls = []; 
+    specialBallTimer = 0; 
+    bossBombTimer = 0; 
+    
+    fBombs = []; // F폭탄 초기화
+    phase3StartTime = 0; // ★ 추가: 3페이즈 생존 타이머 초기화!
     
     if (opacityTimeoutId !== null) {
         clearTimeout(opacityTimeoutId); opacityTimeoutId = null;
     }
-    
+
     resizeGame(800,800); //화면 사이즈 조정
     switchScreen(); // UI 숨기기
     gamePauseScreen.style.display = "none";
@@ -2100,6 +2353,11 @@ function loop() {
     drawPaddle();
     drawBombs();
     drawSpecialBalls();
+    // F 폭탄 그리기
+    for(let i=0; i<fBombs.length; i++) {
+        fBombs[i].draw(ctx);
+    }
+
     drawTopUI();
 
     if(isGameStarted){ //게임 시작 시에만 작동
@@ -2109,6 +2367,8 @@ function loop() {
         updatePaddle();
         updateBombs();
         updateSpecialBalls();
+        updateFBombs(); 
+        
         if(brokenBricksCount >= totalBricks) StageClear();
     }
     
