@@ -82,6 +82,7 @@ const brickOffsetLeft = 35;
 // 게임 오브젝트 및 진행 상황 카운터
 let bricks = [];
 let bombs = [];          // 폭탄들을 저장할 배열
+let fBombs = [];           // 하늘에서 떨어지는 F 배열
 let currentStage = 0;    // 현재 진행 중인 스테이지 번호
 let maxStage = 5;        // 최대 진행 스테이지 변수
 let clearCount = 0;      // 이산수학 미니 스테이지 클리어 수
@@ -97,6 +98,8 @@ let currentDifficulty = "easy"; // 현재 선택된 난이도
 let specialBalls = [];   // 특수공 배열
 let specialBallTimer = 0; // 특수공 생성 타이머
 let bossBombTimer = 0;   // 보스 폭탄 생성 타이머
+let phase3StartTime = 0;   // 3페이즈 생존 타이머 시작 시간
+let phase3FSpawnTimer = 0; // F 생성 쿨타임 타이머
 
 
 // ==========================================
@@ -182,7 +185,114 @@ class Bomb { //폭탄배열
         }
     }
 }
+// === 3페이즈 전용: F 학점 폭탄 클래스 ===
+class FBomb {
+    constructor(x, y, speed) {
+        this.x = x;
+        this.y = y;
+        this.radius = 15; // 충돌 반경
+        this.dy = speed;  // 떨어지는 속도
+        this.isActive = true;
+    }
+    draw(ctx) {
+        if (!this.isActive) return;
+        ctx.fillStyle = "#E74C3C"; // 강렬한 빨간색
+        ctx.font = "bold 32px 'Galmuri11', 'Press Start 2P', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // 하얀색 테두리로 글씨를 돋보이게 렌더링
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeText("F", this.x, this.y);
+        ctx.fillText("F", this.x, this.y);
+    }
+    update() {
+        if (!this.isActive) return;
+        this.y += this.dy;
 
+        // 바닥으로 나가면 메모리에서 삭제
+        if (this.y > canvas.height + 30) this.isActive = false;
+
+        // ★ 패들 충돌 검사 (바에 맞으면 바로 F 학점 엔딩 발동!)
+        if (this.y + this.radius > canvas.height - paddleHeight && this.y - this.radius < canvas.height) {
+            if (this.x > paddleX - this.radius && this.x < paddleX + paddleWidth + this.radius) {
+                this.isActive = false;
+                triggerPhase3Ending(); // 엔딩 호출!
+            }
+        }
+    }
+}
+
+// === F 폭탄 업데이트 및 난이도 조절 (시간 흐름에 따라) ===
+function updateFBombs() {
+    // ★ 추가됨: phase3StartTime이 0일 때(로딩 전)는 연산을 멈춰서 에러를 완벽 차단!
+    if (currentStage !== 5 || currentWebPhase !== 3 || phase3StartTime === 0) return;
+
+    let elapsed = Date.now() - phase3StartTime; // 살아남은 시간(ms)
+    let spawnInterval, fallSpeed, spawnCount;
+
+    // 💡 시간에 따른 'F 학점 비' 난이도 조절
+    if (elapsed < 10000) {
+        // [0 ~ 10초] 피할 만한 수준
+        spawnInterval = 500; // 0.5초마다
+        fallSpeed = 5;       // 속도 5
+        spawnCount = 1;      // 1개씩
+    } else if (elapsed < 15000) {
+        // [10 ~ 15초] 점점 쏟아지기 시작함 (꽤 어려움)
+        spawnInterval = 200; // 0.2초마다
+        fallSpeed = 9;       // 속도 9 (빠름)
+        spawnCount = 3;      // 3개씩
+    } else {
+        // [15초 이후] 절대 못 피하는 수준 (절망의 폭우)
+        spawnInterval = 30;  // 0.03초마다
+        fallSpeed = 16;      // 속도 16 (미친 속도)
+        spawnCount = 10;     // 10개씩 무더기로
+    }
+
+    phase3FSpawnTimer += 16; // 프레임당 시간 더하기
+    if (phase3FSpawnTimer >= spawnInterval) {
+        for(let i=0; i<spawnCount; i++){
+            let randomX = Math.random() * canvas.width;
+            let f = new FBomb(randomX, -30, fallSpeed + Math.random() * 4);
+            fBombs.push(f);
+        }
+        phase3FSpawnTimer = 0;
+    }
+
+    for (let i = fBombs.length - 1; i >= 0; i--) {
+        fBombs[i].update();
+        if(!fBombs[i].isActive) fBombs.splice(i, 1);
+    }
+}
+
+// === F를 맞았을 때 엔딩을 틀어주는 함수 ===
+// === F를 맞았을 때 엔딩을 틀어주는 함수 ===
+function triggerPhase3Ending() {
+    isGameOver = true;
+    isGameStarted = false;
+    
+    // 화면에 남아있는 F 폭탄과 패들 지우기
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // ★ HTML에 있는 비디오 요소를 가져옵니다. (HTML의 비디오 ID가 'endingVideo'라고 가정)
+    let endingVideo = document.getElementById("endingVideo");
+    
+    if (endingVideo) {
+        // 1. 영상을 화면에 띄우고 재생시킵니다.
+        endingVideo.style.display = "block";
+        endingVideo.play();
+        
+        // 2. ★ 핵심: 영상 재생이 완전히 끝나는 순간(onended)을 감지합니다.
+        endingVideo.onended = function() {
+            endingVideo.style.display = "none"; // 영상 다시 숨기기
+            clearGame(); // ★ 영상이 끝난 직후에 성적 계산 및 클리어 화면(NEXT) 띄우기!
+        };
+    } else {
+        // 만약 비디오 요소가 아직 HTML에 없다면 임시로 바로 클리어 처리
+        clearGame();
+    }
+}
 //객체에서 Brick class로 변경, 속성이 많아질 거 같아 Object.assign으로 구현
 class Brick {
     constructor(x, y, option = {}) { //생성할때 x,y는 필수로 넣고 나머지는 baseSettings 에서 바꾸고 싶은것만 {}로 감싸서 넣으면 됨, 없는 속성 추가도 가능
@@ -613,6 +723,9 @@ function checkPaddleCollision() {
 
 // 공 위치 업데이트 함수
 function updateBall(){
+
+    if (currentStage === 5 && currentWebPhase === 3) return;
+
     // 1. 벽 충돌
     if(x + dx > canvas.width - ballRadius || x + dx < ballRadius) dx = -dx;
     if(y + dy < ballRadius) dy = -dy; 
@@ -879,7 +992,7 @@ function drawTopUI() {
     // 글씨 공간을 위해 바 중심을 살짝 왼쪽으로 배치
     const barX = (canvas.width - barWidth) / 2 - 15; 
     const barY = 22;
-    
+
     // 미니 스테이지 진척도
     let progressText = "";
     if (currentStage === 1) progressText = `MAP: ${clearCount + 1}/${gateStageCount}`;
@@ -927,6 +1040,8 @@ function drawTopUI() {
 // 5. 화면 렌더링 (그리기 전담 함수들)
 // ==========================================
 function drawBall() {
+
+    if (currentStage === 5 && currentWebPhase === 3) return;
 
     if (ballSkinType === "image" && ballImage) {
         // 야구공, 농구공, 축구공 
@@ -1560,48 +1675,49 @@ function loadWebPhase1() {
 // ---------------------------------------------------------
 //  Phase 2  
 // ---------------------------------------------------------
+// ---------------------------------------------------------
+//  Phase 2  
+// ---------------------------------------------------------
 function loadWebPhase2() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
-    totalBricks = 0;
+    totalBricks = 9999; // ★ 1페이즈처럼 자동 클리어 방지를 위해 9999로 고정!
     bossBombTimer = 0;
     resetBallAndPaddle();
 
     console.log("웹 프로그래밍 2페이즈: JS가동");
     startScene("startWebprogammingP2");
     let beBoss = new BossBrick(350, 100, { 
-        // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
-   //     imageSrc: "./testImg/be_boss.png", 
         color: "#2ECC71", text: "Node.js API", hp: 50, realType: "BOSS",
         effectFunc: () => { checkWebPhaseClear(); } 
     });
     beBoss.width = 140;
     beBoss.height = 90;
     bricks.push(beBoss);    
-
-    totalBricks++;
 }
 
 // ---------------------------------------------------------
 //  Phase 3
 // ---------------------------------------------------------
+// ---------------------------------------------------------
+//  Phase 3 : 생존형 기믹 (F 학점 폭우)
+// ---------------------------------------------------------
+// ---------------------------------------------------------
+//  Phase 3 : 생존형 기믹 (보스 없는 순수 F 학점 폭우)
+// ---------------------------------------------------------
 function loadWebPhase3() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
-    totalBricks = 0; // 💡 3페이즈는 정상 카운팅으로 복구
+    fBombs = []; // F 폭탄 초기화
+    
+    // ★ 자동 클리어 방지: 깰 수 없는 가상의 목표를 주어 시간이 끝날 때까지 버티게 만듭니다.
+    totalBricks = 9999; 
     resetBallAndPaddle();
 
-    console.log("웹 프로그래밍 2페이즈: JS가동");
+    phase3StartTime = Date.now(); // 타이머 시작!
+    phase3FSpawnTimer = 0;
 
-    let dbBoss = new BossBrick(350, 100, { 
-        // 💡 3페이즈 전용 데이터베이스 최종 보스 이미지 삽입
-      //  imageSrc: "./testImg/db_boss.png", 
-        color: "#34495E", text: "MySQL DB", hp: 10, realType: "BOSS",
-        effectFunc: () => { checkWebPhaseClear(); } 
-    });
-    dbBoss.width = 160;
-    dbBoss.height = 100;
-    bricks.push(dbBoss);
+    console.log("웹 프로그래밍 3페이즈: 보스 없는 순수 F 학점 생존 시작");
     
-    totalBricks++;
+    // ★ 보스 블록(DB Boss) 생성 코드는 완전히 삭제되었습니다!
 }
 
 function checkWebPhaseClear() {
@@ -1760,6 +1876,45 @@ document.addEventListener("mousemove", mouseMoveHandler, false);
 document.addEventListener("keydown", cheatKeyHandler, false);
 canvas.addEventListener("click", clickBombHandler, false); // 폭탄 클릭 이벤트
 
+
+function cheatKeyHandler(e) {
+    // 기존 Z키 치트 (객체지향 스테이지 테스트용)
+    if (e.key === 'z' || e.key === 'Z') {
+        if (currentStage !== 2) { currentStage = 2; initGame(); }
+        let destroyedByCheat = 0;
+        for (let i = 0; i < bricks.length; i++) {
+            let b = bricks[i];
+            if (b.realType !== "BOSS" && b.status !== 0) {
+                b.status = 0; destroyedByCheat++;
+            } else if (b.realType === "BOSS" && b.status !== 0) {
+                b.expand(); b.hp = 15; b.status = 1;
+            }
+        }
+        brokenBricksCount += destroyedByCheat;
+    }
+    
+    // ★ 추가: R 키 치트 (웹프로그래밍 페이즈 고속 스킵용)
+    if (e.key === 'r' || e.key === 'R') {
+        if (currentStage === 5) {
+            // 1, 2페이즈: 현재 떠 있는 보스를 즉사시키고 다음 페이즈로 강제 이동
+            if (currentWebPhase === 1 || currentWebPhase === 2) {
+                let boss = bricks.find(b => b.realType === "BOSS");
+                if (boss && boss.status !== 0) {
+                    boss.hp = 0;
+                    boss.status = 0;
+                    brokenBricksCount++;
+                    boss.effectFunc(); // 다음 페이즈 로딩 함수 강제 실행
+                    console.log(`[치트 발동] ${currentWebPhase}페이즈 보스 즉사!`);
+                }
+            } 
+            // 3페이즈: F 학점 폭우 생존 기믹이므로 즉시 엔딩 발동
+            else if (currentWebPhase === 3) {
+                triggerPhase3Ending();
+                console.log("[치트 발동] 3페이즈 즉시 엔딩 씬 호출!");
+            }
+        }
+    }
+}
 window.addEventListener("keydown", (e) => {
     if (e.key === 'k') clearGame(); //클리어 화면 출력
     if (e.key === ' ' || e.key === 'Enter') { //스페이스나 엔터로 다음 창 진행
@@ -2092,18 +2247,21 @@ function initGame() {
     isGameOver = false;
     isGameStarted = true;
     isCleared = false;
-    ballOpacity = 1.0; // 투명도 초기화
-    playerHp = 3;      // 체력 초기화
-    specialBalls = []; // 특수공 초기화
-    specialBallTimer = 0; // 특수공 생성 타이머 초기화
-    bossBombTimer = 0; // 보스 폭탄 생성 타이머 초기화
+    ballOpacity = 1.0; 
+    playerHp = 3;      
+    specialBalls = []; 
+    specialBallTimer = 0; 
+    bossBombTimer = 0; 
+    
+    fBombs = []; // F폭탄 초기화
+    phase3StartTime = 0; // ★ 추가: 3페이즈 생존 타이머 초기화!
     
     if (opacityTimeoutId !== null) {
         clearTimeout(opacityTimeoutId); opacityTimeoutId = null;
     }
     
-    resizeGame(600,400); //화면 사이즈 조정
-    switchScreen(); // UI 숨기기
+    resizeGame(600,400); 
+    switchScreen(); 
     gamePauseScreen.style.display = "none";
     loadStage(currentStage);
     loop();
@@ -2122,6 +2280,11 @@ function loop() {
     drawPaddle();
     drawBombs();
     drawSpecialBalls();
+    // F 폭탄 그리기
+    for(let i=0; i<fBombs.length; i++) {
+        fBombs[i].draw(ctx);
+    }
+
     drawTopUI();
 
     if(isGameStarted){ //게임 시작 시에만 작동
@@ -2131,6 +2294,8 @@ function loop() {
         updatePaddle();
         updateBombs();
         updateSpecialBalls();
+        updateFBombs(); 
+        
         if(brokenBricksCount >= totalBricks) StageClear();
     }
     
