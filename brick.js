@@ -861,19 +861,25 @@ function drawTopUI() {
     // 3. PROGRESS BAR 영역 (중앙)
     // ==========================================
     let remainingRatio = 1;
-    if (totalBricks > 0 && totalBricks < 9000) {
+    
+    // 현재 맵에 보스가 있는지 탐색
+    let boss = bricks.find(b => b.realType === "BOSS");
+
+    // ★ 보스가 존재하고 해금된 상태("LOCK"이 아님)라면 진행도를 보스의 남은 체력 비율로 변경!
+    if (boss && boss.status !== "LOCK") {
+        remainingRatio = Math.max(0, boss.hp / boss.maxHp);
+    } 
+    // 그 외 일반 진행 상황 (보스가 아직 잠겨있거나 보스가 없는 스테이지)
+    else if (totalBricks > 0 && totalBricks < 9000) {
         remainingRatio = Math.max(0, (totalBricks - brokenBricksCount) / totalBricks);
-    } else if (totalBricks >= 9000) {
-        let boss = bricks.find(b => b.realType === "BOSS");
-        if (boss) remainingRatio = Math.max(0, boss.hp / boss.maxHp);
     }
 
     const barWidth = 200; 
     const barHeight = 8; 
     // 글씨 공간을 위해 바 중심을 살짝 왼쪽으로 배치
     const barX = (canvas.width - barWidth) / 2 - 15; 
-    const barY = 22; 
-
+    const barY = 22;
+    
     // 미니 스테이지 진척도
     let progressText = "";
     if (currentStage === 1) progressText = `MAP: ${clearCount + 1}/${gateStageCount}`;
@@ -1260,7 +1266,7 @@ function loadOopStage() {
     const COLOR_BOSS      = "#76941e";
     const COLOR_ADDB      = "#E87F24";
     const COLOR_SUBB      = "#FFC81E";
-    const COLOR_OPACITY   = "#F8C463"
+    const COLOR_OPACITY   = "#F8C463";
 
     for (let layer = 4; layer >= 1; layer--) {
         const positions = layerPositions[layer];
