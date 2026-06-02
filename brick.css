@@ -499,3 +499,70 @@ code { background: #2a2b2d; padding: 2px 6px; border-radius: 4px; color: #fff; }
   border-top: 1px solid #333;
   margin: 20px 0 15px 0;
 }
+
+/* =========================================
+   최종 성적표 UI 및 게임 오버 화면 스타일
+========================================= */
+
+.final-message {
+    font-size: 32px;
+    margin-bottom: 25px;
+    color: #FFFFFF;
+}
+
+.final-score-board {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;
+    font-family: 'Galmuri11', sans-serif;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 25px 40px;
+    border-radius: 12px;
+    border: 2px solid #555;
+    box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
+}
+
+.final-subject-list {
+    text-align: left;
+    font-size: 18px;
+    line-height: 1.5;
+    color: #DDD;
+}
+
+.final-subject-item {
+    display: flex;
+    justify-content: space-between;
+    width: 280px;
+    margin-bottom: 5px;
+}
+
+.final-gpa-box {
+    text-align: center;
+    border-left: 2px solid #777;
+    padding-left: 40px;
+}
+
+.final-gpa-title {
+    font-size: 18px;
+    color: #CCC;
+    margin-bottom: 15px;
+}
+
+.final-gpa-value {
+    color: #FFD700;
+    font-size: 70px;
+    font-weight: bold;
+    text-shadow: 3px 3px 12px rgba(255, 215, 0, 0.4);
+}
+
+/* 개별 게임 오버 (F학점) 텍스트용 */
+.game-over-grade {
+    text-align: center;
+    color: #E74C3C;
+    font-size: 90px;
+    font-weight: bold;
+    font-family: 'Galmuri11', 'Press Start 2P', sans-serif;
+    text-shadow: 4px 4px 15px rgba(0,0,0,0.8);
+    margin-top: 15px;
+}
