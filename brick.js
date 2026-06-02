@@ -1897,6 +1897,12 @@ function handleGameStart() {
         gameStartArea.style.display = "block";
 }
 function handleSceneEnd() {
+    // 마지막 5스테이지(클리어 시 내부적으로 currentStage가 6이 됨) 완료 시 최종 성적표 호출
+    if (currentStage === 6) {
+        questBox.style.display = 'none';
+        endGame("모든 스테이지를 클리어했습니다!", true);
+        return;
+    }
     if (currentStage == 4) {
         gameClearScreen.style.display = "flex";
     }
@@ -2085,7 +2091,7 @@ window.addEventListener("load", () => {
       console.error("HTML에서 'quest-box' ID를 찾을 수 없습니다. HTML 코드를 확인해주세요.");
     }
     loadGameData();
-        fitWindowSize(); //window load 후 화면 resize 실행, 이거 없으면 화면이 안뜨네요
+    resizeGame(800, 600); // 초기 캔버스 해상도를 800x600으로 설정하고 화면 맞춤(fitWindowSize) 실행
     switchScreen(mainScreen); // load 완료 후 화면 전환
 });
 
@@ -2104,12 +2110,18 @@ restartBtn.forEach((item)=>{
 });
 mainBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{
+        // 게임 상태를 종료 처리하여 남아있는 애니메이션 루프를 완전히 차단
+        isGameOver = true; 
+        isGameStarted = false;
+        if (animationId !== null) cancelAnimationFrame(animationId);
+
+        
         switchScreen(mainScreen); // 메인 화면
         gamePauseScreen.style.display = "none";
         questBox.style.display = "none";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         resizeGame(800,600);
-        canvas.style.backgroundImage = "";
+        canvas.style.backgroundImage = "none"; // 이전 스테이지의 배경 이미지를 확실하게 제거
     });
 });
 nextBtn.addEventListener("click",initGame); //다음으로 버튼
@@ -2385,10 +2397,15 @@ function clearGame(){
         case 5: startScene("ending"); break;
     }
     
+    let wasLastStage = (currentStage === 5);
     currentStage++;
     if (currentStage > maxStage) maxStage = currentStage;
-    switchScreen(gameClearScreen); 
-    clearBtns.style.visibility = "hidden";
+    
+    // 마지막 스테이지가 아닐 때만 다음 스테이지 진행 화면(gameClearScreen)을 출력
+    if (!wasLastStage) {
+        switchScreen(gameClearScreen); 
+        clearBtns.style.visibility = "hidden";
+    }
 }
 
 function resetBallAndPaddle() { //공, 패들 리셋 함수
