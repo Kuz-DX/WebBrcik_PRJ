@@ -36,7 +36,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;  /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
-    height: 80%; /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
+    height: 100%; /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
     background: rgba(0, 0, 0, 0.7); /* 반투명 검은색 배경 */
     color: white;
     display: none; 
@@ -50,7 +50,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;  /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
-    height: 80%; /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
+    height: 100%; /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
     background: rgba(0, 0, 0, 0.7); /* 반투명 검은색 배경 */
     color: white;
     display: none; 
@@ -64,7 +64,7 @@ body {
     top: 0;
     left: 0;
     width: 100%;  /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
-    height: 80%; /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
+    height: 100%; /* 💡 부모 컨테이너 크기에 맞춰 가변 대응 */
     background: rgba(0, 0, 0, 0.7); /* 반투명 검은색 배경 */
     color: white;
     display: none; 

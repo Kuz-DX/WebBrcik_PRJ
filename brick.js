@@ -2104,6 +2104,7 @@ mainBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{
         switchScreen(mainScreen); // 메인 화면
         gamePauseScreen.style.display = "none";
+        questBox.style.display = "none";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         resizeGame(800,600);
         canvas.style.backgroundImage = "";
