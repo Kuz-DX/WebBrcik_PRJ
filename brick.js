@@ -1267,7 +1267,7 @@ function loadTutorialStage(){
     const COLOR_SUBB      = "#FFC81E";
     const COLOR_OPACITY   = "#F8C463"
     canvas.style.backgroundImage = "url(./testImg/CProgramming.png)";
-    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -50);
+    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -120);
     createGrid(brickRowCount, brickColumnCount, startX, startY, (r, c, brickX, brickY) => {
         if(r == brickRowCount-1 && c == 2){ 
             bricks.push(new Brick(brickX, brickY, {color: COLOR_OPACITY, effectFunc:()=>setBallOpacity(0.2)}));
@@ -1417,7 +1417,7 @@ function loadOopStage() {
     }
 
     const totalBlockWidth = cols * (brickWidth + brickPadding) - brickPadding;
-    const { startX, startY } = calculateCenterOffset(rows, cols, -70);
+    const { startX, startY } = calculateCenterOffset(rows, cols, -120);
     const blockGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
 
     const COLOR_PUBLIC    = "#3498DB"; 
