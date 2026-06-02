@@ -521,7 +521,7 @@ class SpecialBall {
         let rand = Math.random();
         if (rand < 0.5) {
             this.text = "팀플";
-            this.damage = 4;
+            this.damage = 3;
             this.color = "#3498DB"; // 파란색
         } else {
             this.text = "랩실습";
@@ -1615,15 +1615,15 @@ function loadWebPhase1() {
 
     // 1. 메인 보스 (HTML UI)
     let feBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
-        color: "#E44D26", text: "색상 출력하기 테이블", hp: 10, realType: "BOSS",
+        color: "#E44D26", text: "색상 출력하기 테이블", hp: 7, realType: "BOSS",
         width: canvas.width*0.2, height: canvas.height*0.15,
         effectFunc: () => { checkWebPhaseClear(); } 
     });
     bricks.push(feBoss);
 
     // 2. '출력하기' 버튼 블록 (행 단위 공백 체크 및 단일 행 생성)
-    let createBtn = new Brick(canvas.width*0.3, canvas.height*0.25, {
-        color: "gray", text: "출력하기", width:canvas.width*0.2 , height: canvas.height*0.05,
+    let createBtn = new Brick(canvas.width*0.25, canvas.height*0.3, {
+        color: "#3498DB", text: "출력하기", width:canvas.width*0.2 , height: canvas.height*0.05,
         effectFunc: function() {
             const colors = ["#800000", "#FF0000", "#FFA500", "#FFFF00", "#008000", "#0000FF", "#800080"];
             const rowYs = [canvas.height*0.4, canvas.height*0.45, canvas.height*0.5]; // 1행, 2행, 3행의 가상 Y축 좌표 배열
@@ -1672,8 +1672,8 @@ function loadWebPhase1() {
     bricks.push(createBtn);
 
     // 3. '없애기' 버튼 블록 (개수와 상관없이 모든 색상 블록 일괄 제거)
-    let removeBtn = new Brick(canvas.width*0.5, canvas.height*0.25, {
-        color: "lightgray", text: "없애기", width: canvas.width*0.2, height: canvas.height*0.05,
+    let removeBtn = new Brick(canvas.width*0.55, canvas.height*0.3, {
+        color: "#E74C3C", text: "없애기", width: canvas.width*0.2, height: canvas.height*0.05,
         effectFunc: function() {
             let removedCount = 0;
             // 실시간으로 캔버스에 존재하는 모든 COLOR_BLOCK을 강제 파괴 상태로 전환
@@ -1697,9 +1697,6 @@ function loadWebPhase1() {
 // ---------------------------------------------------------
 //  Phase 2  
 // ---------------------------------------------------------
-// ---------------------------------------------------------
-//  Phase 2  
-// ---------------------------------------------------------
 function loadWebPhase2() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
     totalBricks = 9999; // ★ 1페이즈처럼 자동 클리어 방지를 위해 9999로 고정!
@@ -1712,7 +1709,7 @@ function loadWebPhase2() {
     let beBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
         // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
    //     imageSrc: "./testImg/be_boss.png", 
-        color: "#2ECC71", text: "Node.js API", hp: 50, realType: "BOSS",
+        color: "#2ECC71", text: "Node.js API", hp: 15, realType: "BOSS",
         width: canvas.width*0.2, height: canvas.height*0.15,
         effectFunc: () => { checkWebPhaseClear(); } 
     });
@@ -2192,9 +2189,9 @@ function getCalculatedScore() {
     switch(currentStage) {
         case 0: cutlines = [18, 24, 30, 35, 50]; break; //튜토    
         case 1: cutlines = [29, 35, 45, 55, 65]; break; //이산
-        case 2: cutlines = [20, 30, 40, 50, 65]; break; //객지프
+        case 2: cutlines = [25, 30, 40, 45, 60]; break; //객지프
         case 4: cutlines = [15, 25, 35, 45, 60]; break; //자구
-        case 5: cutlines = [70, 85, 100, 115, 130]; break; //웹프
+        case 5: cutlines = [25, 35, 55, 65, 80]; break; //웹프
         default: cutlines = [20, 30, 40, 50, 60];
     }
 
