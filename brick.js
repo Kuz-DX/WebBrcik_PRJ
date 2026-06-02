@@ -1450,8 +1450,8 @@ function loadOopStage() {
             blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
             blockPool.push({ type: "public_W", text: "int getW", color: COLOR_PUBLIC, hp: 1, indestructible: false });
             blockPool.push({ type: "public_X", text: "double getX", color: COLOR_PUBLIC, hp: 1, indestructible: false });
-            blockPool.push({ type: "protected_K", text: "protected int K", color: COLOR_PROTECTED, hp: 1, indestructible: false });
-            blockPool.push({ type: "protected_B", text: "protected string B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_K", text: "protected K", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_B", text: "protected B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
             while (blockPool.length < numBlocks) blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
         } else if (layer === 1) { 
             blockPool.push({ type: "BOSS", text: "BOSS", color: COLOR_BOSS, hp: 10, indestructible: false });
@@ -1464,6 +1464,24 @@ function loadOopStage() {
         positions.forEach((pos, index) => blockGrid[pos.r][pos.c] = { ...blockPool[index], layer: layer });
     }
 
+    // 💡 [패턴 엔진] OOP 보스 전용 가중치 기반 랜덤 공격 생성기
+    const getBossRandomEffect = (bossX, bossY, bossWidth, bossHeight) => {
+        const weightedEffects = [
+            { weight: 20, effect: () => setBallOpacity(0.1) }, // 시야 방해
+            { weight: 20, effect: subBarsize },                // 패들 축소 공격
+            { weight: 30, effect: () => spawnBomb(bossX + bossWidth / 2, bossY + bossHeight) }, // 폭탄 투하
+            { weight: 10, effect: addBarsize },                // 플레이어 버프 (실수형 패턴)
+            { weight: 20, effect: () => {} }                   // 꽝 (기본 타격)
+        ];
+        
+        let rand = Math.random() * 100, cumulativeWeight = 0;
+        for (let i = 0; i < weightedEffects.length; i++) {
+            cumulativeWeight += weightedEffects[i].weight;
+            if (rand < cumulativeWeight) return weightedEffects[i].effect;
+        }
+        return () => {};
+    };
+
     createGrid(rows, cols, startX, startY, (r, c, brickX, brickY) => {
         let bData = blockGrid[r][c];
         if (!bData) return; 
@@ -1472,6 +1490,7 @@ function loadOopStage() {
         let initialColor  = (bData.layer === 4) ? bData.color : "#222222"; 
         let initialText   = bData.text;
 
+        // 보스가 파괴(사망)될 때 실행될 함수
         let effect = () => {
             const destroyTarget = (targetLayer, targetType) => {
                 let target = bricks.find(b => b.layer === targetLayer && b.realType === targetType && b.status !== 0);
@@ -1505,8 +1524,7 @@ function loadOopStage() {
             }
 
             if (bData.type === "BOSS") {
-                let currentBoss = bricks.find(b => b.realType === "BOSS");
-                if (currentBoss) spawnBomb(currentBoss.x + currentBoss.width / 2, currentBoss.y + currentBoss.height / 2);
+                console.log("OOP 보스 처치 완료!"); // 사망 시 폭탄 대신 로그 출력 (사망 효과 커스텀 가능)
             }
         };
 
@@ -1515,6 +1533,25 @@ function loadOopStage() {
             realType: bData.type, layer: bData.layer, effectFunc: effect, hp: bData.hp, indestructible: bData.indestructible
         });
         newBrick.tempData = { color: bData.color };
+
+        // 🔥 [핵심 아키텍처] 보스 객체의 물리 피격(onHit) 이벤트를 런타임에 낚아채어 오버라이딩
+        if (bData.type === "BOSS") {
+            let originalOnHit = newBrick.onHit.bind(newBrick); // 물리 엔진의 기본 체력 차감 로직 백업
+            
+            newBrick.onHit = function(damage = 1) {
+                // 보스의 LOCK이 풀려있고 살아있을 때만 피격 시 랜덤 효과 발동
+                if (this.status === 1 && this.hp > 0) {
+                    let currentW = this.width || brickWidth;
+                    let currentH = this.height || brickHeight;
+                    
+                    let randomAttack = getBossRandomEffect(this.x, this.y, currentW, currentH);
+                    randomAttack();
+                }
+                
+                originalOnHit(damage); // 백업해둔 기본 타격 로직(체력 감소 및 사망 판정) 정상 수행
+            };
+        }
+
         bricks.push(newBrick); totalBricks++; 
     });
 }
@@ -1943,21 +1980,7 @@ function clickBombHandler(e) {
 }
 
 
-function cheatKeyHandler(e) {
-    if (e.key === 'z' || e.key === 'Z') {
-        if (currentStage !== 2) { currentStage = 2; initGame(); }
-        let destroyedByCheat = 0;
-        for (let i = 0; i < bricks.length; i++) {
-            let b = bricks[i];
-            if (b.realType !== "BOSS" && b.status !== 0) {
-                b.status = 0; destroyedByCheat++;
-            } else if (b.realType === "BOSS" && b.status !== 0) {
-                b.expand(); b.hp = 15; b.status = 1;
-            }
-        }
-        brokenBricksCount += destroyedByCheat;
-    }
-}
+
 
 // 이벤트 리스너 등록
 document.addEventListener("mousemove", mouseMoveHandler, false);
@@ -1975,7 +1998,7 @@ function cheatKeyHandler(e) {
             if (b.realType !== "BOSS" && b.status !== 0) {
                 b.status = 0; destroyedByCheat++;
             } else if (b.realType === "BOSS" && b.status !== 0) {
-                b.expand(); b.hp = 15; b.status = 1;
+                b.expand(); b.hp = 10; b.status = 1;
             }
         }
         brokenBricksCount += destroyedByCheat;
