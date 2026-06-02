@@ -267,7 +267,6 @@ function updateFBombs() {
 }
 
 // === F를 맞았을 때 엔딩을 틀어주는 함수 ===
-// === F를 맞았을 때 엔딩을 틀어주는 함수 ===
 function triggerPhase3Ending() {
     isGameOver = true;
     isGameStarted = false;
@@ -516,21 +515,22 @@ class SpecialBall {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.radius = 20; // 기본공 12보다 큼
-        this.color = "#3498DB"; // 파랑색
+        this.radius = 20; // 기본공보다 큼
         
+        // ★ 50% 확률로 팀플 또는 랩실습 등장
         let rand = Math.random();
         if (rand < 0.5) {
             this.text = "팀플";
-            this.damage = 5;
+            this.damage = 4;
+            this.color = "#3498DB"; // 파란색
         } else {
-            this.text = "과제";
-            this.damage = 10;
+            this.text = "랩실습";
+            this.damage = 2;
+            this.color = "#E74C3C"; // 빨간색
         }
         
-        // 보스 아래에서 시작해서 떨어짐
-        this.dx = (Math.random() - 0.5) * 3; // x축 속도 랜덤
-        this.dy = 3; // y축 아래로
+        this.dx = 0;
+        this.dy = 3;
         this.isActive = true;
     }
     
@@ -575,9 +575,15 @@ class SpecialBall {
             }
         }
         
-        // 바닥 충돌 (소멸) - "튕기지못하고 바닥에 떨어지면 그냥 소멸해"
+        // ★ 바닥 충돌 (소멸 및 HP 감소)
         if (this.y + this.dy > canvas.height - this.radius) {
             this.isActive = false;
+            playerHp--; // 체력 깎임
+            paddleHitCount += 10; // 페널티 코스트
+            if (playerHp <= 0) {
+                // 게임 오버 메시지도 과제 제외하고 수정
+                endGame("특수공(팀플/랩실습)을 놓쳐 체력이 소진되었습니다!");
+            }
         }
         
         this.x += this.dx;
@@ -763,13 +769,40 @@ function updatePaddle(){ //함수화
 
 // 폭탄 업데이트 함수
 function updateBombs() {
-    // 웹프로그래밍 2페이즈 보스 폭탄 투하 패턴 (4초마다)
-    if (currentStage === 5 && currentWebPhase === 2) {
+    // ★ 웹프로그래밍 1페이즈 (3초마다 1개씩 맵 전역에서 투하)
+    if (currentStage === 5 && currentWebPhase === 1) {
+        let boss = bricks.find(b => b.realType === "BOSS");
+        if (boss && boss.status !== 0) {
+            bossBombTimer += 16;
+            if (bossBombTimer >= 3000) {
+                
+                // 보스 너비가 아닌 캔버스(맵) 가로 전체에서 랜덤 위치 지정
+                let randomX = Math.random() * (canvas.width - 20) + 10;
+                
+                spawnBomb(randomX, boss.y + boss.height);
+                
+                bossBombTimer = 0;
+            }
+        }
+    }
+    // ★ 웹프로그래밍 2페이즈 (4초마다 2개씩 맵 전역에서 투하)
+    else if (currentStage === 5 && currentWebPhase === 2) {
         let boss = bricks.find(b => b.realType === "BOSS");
         if (boss && boss.status !== 0) {
             bossBombTimer += 16;
             if (bossBombTimer >= 4000) {
-                spawnBomb(boss.x + boss.width / 2, boss.y + boss.height);
+                
+                // 완전히 랜덤한 2개의 폭탄 생성
+                for (let i = 0; i < 2; i++) {
+                    // 캔버스 가로 전체 기준 랜덤 위치 지정
+                    let randomX = Math.random() * (canvas.width - 20) + 10;
+                    
+                    // 똑같이 떨어지지 않게 세로(Y) 시작 위치에 시간차(오차) 부여
+                    let randomYOffset = Math.random() * 40; 
+                    
+                    spawnBomb(randomX, boss.y + boss.height - randomYOffset);
+                }
+                
                 bossBombTimer = 0;
             }
         }
@@ -806,51 +839,38 @@ function updateSpecialBalls() {
 }
 
 function spawnSpecialBall() {
-    let radius = 20; // 특수공의 기본 반지름
-
-    // 패들과 바로 충돌하지 않게 캔버스 내 랜덤 위치 설정
-    let spawnX = radius + Math.random() * (canvas.width - radius * 2);
-    let spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
-    let speed = Math.random() * 3 + 3; 
-    let dx, dy;
-
     let boss = bricks.find(b => b.realType === "BOSS");
-    if (boss) {
-        let bossLeft = boss.x;
-        let bossRight = boss.x + boss.width;
-        let bossBottom = boss.y + boss.height;
+    let spawnX, spawnY, dx, dy;
+    let speed = Math.random() * 3 + 3; 
 
-        if (spawnX < bossLeft) {
-            // 보스 왼쪽: -x 방향으로만 가속 (120도 ~ 240도)
-            let angle = (2/3 * Math.PI) + Math.random() * (2/3 * Math.PI);
-            dx = Math.cos(angle) * speed;
-            dy = Math.sin(angle) * speed;
-        } else if (spawnX > bossRight) {
-            // 보스 오른쪽: +x 방향으로만 가속 (-60도 ~ 60도)
-            let angle = (-1/3 * Math.PI) + Math.random() * (2/3 * Math.PI);
-            dx = Math.cos(angle) * speed;
-            dy = Math.sin(angle) * speed;
-        } else {
-            // 보스 양끝단 사이: 위쪽에 스폰되지 않게 Y좌표 강제 조정
-            if (spawnY < bossBottom + radius) {
-                spawnY = bossBottom + radius + Math.random() * 50;
-            }
-            // 연직 방향으로만 가속 (캔버스에서는 +y가 아래 방향)
-            dx = 0;
-            dy = speed;
-        }
+    if (boss) {
+        // 1. X좌표는 보스의 중앙
+        spawnX = boss.x + (boss.width / 2);
+        
+        // ★ 2. Y좌표를 보스 정중앙이 아닌, '보스 블록의 바로 아래쪽 바깥'으로 밀어냅니다!
+        // (보스의 y좌표 + 보스 높이 + 공의 반지름(20) + 여유공간(5))
+        spawnY = boss.y + boss.height + 25;
+
+        // 3. 아래쪽 150도 방향 발사 
+        let minAngle = 15 * (Math.PI / 180);
+        let maxAngle = 165 * (Math.PI / 180);
+        let angle = minAngle + Math.random() * (maxAngle - minAngle);
+
+        dx = Math.cos(angle) * speed;
+        dy = Math.sin(angle) * speed;
     } else {
-        // 360도 랜덤한 방향으로 랜덤 속도 설정
+        // 보스가 없는 예외 상황
+        let radius = 20;
+        spawnX = radius + Math.random() * (canvas.width - radius * 2);
+        spawnY = radius + Math.random() * (canvas.height - paddleHeight - radius * 4);
         let angle = Math.random() * Math.PI * 2;
         dx = Math.cos(angle) * speed;
         dy = Math.sin(angle) * speed;
     }
 
     let sb = new SpecialBall(spawnX, spawnY);
-    
     sb.dx = dx;
     sb.dy = dy;
-
     specialBalls.push(sb);
 }
 
@@ -1687,7 +1707,7 @@ function loadWebPhase2() {
     console.log("웹 프로그래밍 2페이즈: JS가동");
     startScene("startWebprogammingP2");
     let beBoss = new BossBrick(350, 100, { 
-        color: "#2ECC71", text: "Node.js API", hp: 50, realType: "BOSS",
+        color: "#2ECC71", text: "Node.js API", hp: 20, realType: "BOSS",
         effectFunc: () => { checkWebPhaseClear(); } 
     });
     beBoss.width = 140;
