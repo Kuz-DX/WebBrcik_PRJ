@@ -2018,6 +2018,7 @@ window.addEventListener("load", () => {
       console.error("HTML에서 'quest-box' ID를 찾을 수 없습니다. HTML 코드를 확인해주세요.");
   }
   loadGameData();
+  fitWindowSize(); //window load 후 화면 resize 실행, 이거 없으면 화면이 안뜨네요
 });
 
 async function loadGameData() { //웹서버 구축 후 사용 예정
