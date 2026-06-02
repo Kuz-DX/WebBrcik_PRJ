@@ -1901,11 +1901,14 @@ function mouseMoveHandler(e) {
     const canvasScaleX = canvas.width / rect.width;
     const relativeX = (e.clientX - rect.left) * canvasScaleX;
 
-    if(relativeX > 0 && relativeX < canvas.width) {
+    if(isGameStarted){
+        if(relativeX > 0 && relativeX < canvas.width) {
         paddleX = relativeX - paddleWidth / 2;
         if (paddleX < 0) paddleX = 0;
         if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
     }
+    }
+    
 }
 
 // [7. UI 제어 영역의 폭탄 클릭 핸들러 수정]
