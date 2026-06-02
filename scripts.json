@@ -21,7 +21,7 @@
   "startDiscrete":[
     { "speaker": "나", "text": "1교시부터 힘들었다...","layout":"none" },
     { "speaker": "나", "text": "이산 수학은 별 일 없겠지?" },
-    { "speaker": " ", "text": "(블럭들이 등장한다)" , "layout" : "flex"},
+    { "speaker": "강의실", "text": "(블럭들이 등장한다)" , "layout" : "flex"},
     { "speaker": "나", "text": "아 제발" }
   ],
   "clearDiscrete":[
@@ -69,7 +69,7 @@
     { "speaker": "나", "text": "그냥 끝나고 정상적인거 먹으러 가야겠다... ㅠ.ㅠ" },
     { "speaker": "나", "text": "다음 수업은 자료구조네" },
     { "speaker": "나", "text": "6층까지 언제 올라가지..." },
-    { "speaker": " ", "text": "강의실로 이동 중..." },
+    { "speaker": "공학관", "text": "강의실로 이동 중..." },
     { "speaker": "나", "text": "어? 뭐지" ,"layout" : "flex"},
     { "speaker": "나", "text": "어디선가 화약 냄새가 나." },
     { "speaker": "나", "text": "블럭을 깨면 랜덤으로 폭탄이 나올 것 같은데?" },
