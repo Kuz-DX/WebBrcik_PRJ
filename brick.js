@@ -1334,7 +1334,9 @@ function randomBossMap() {
 }
 
 function loadDiscreteStage() {
-    startScene("startDiscrete");
+    if (clearCount == 0){
+        startScene("startDiscrete");
+    }
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
 
 
