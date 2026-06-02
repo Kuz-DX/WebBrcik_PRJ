@@ -80,12 +80,12 @@
                     <p>적은 횟수로 벽돌을 깨어 높은 학점에 도전해보세요!</p>
                     <p>score는 cost가 커질수록 낮아집니다.</p>
                     <p>cutlines<br>
-                        A+: 85<br>
-                        A : 70<br>
-                        B+: 55<br>
-                        B : 40<br>
-                        C+: 30<br>
-                        C : 20 이하<br>
+                        A+: ~85<br>
+                        A : ~70<br>
+                        B+: ~55<br>
+                        B : ~40<br>
+                        C+: ~30<br>
+                        C :  ~0<br>
                         F : GameOver</p>
                 </section>
             </div>
@@ -133,6 +133,16 @@
         </div>
         <div id="gameOverScreen">
             <h2 id="gameOverMessage">게임 오버!</h2>
+            
+            <div id="finalScoreBoard" class="final-score-board" style="display: none;">
+                <div id="finalSubjectList" class="final-subject-list">
+                    </div>
+                <div class="final-gpa-box">
+                    <div class="final-gpa-title">최종 학점 평균 (GPA)</div>
+                    <div id="finalGpaValue" class="final-gpa-value">0.00</div>
+                </div>
+            </div>
+
             <div class="divBtn">
                 <button class="restartBtn">다시 시작</button>
                 <button class="mainBtn">메인으로</button>

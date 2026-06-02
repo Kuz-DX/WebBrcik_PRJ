@@ -190,29 +190,28 @@ class FBomb {
     constructor(x, y, speed) {
         this.x = x;
         this.y = y;
-        this.radius = 15; // 충돌 반경
+        this.radius = 24; // ★ 글씨가 커진 만큼 패들에 닿는 충돌 반경도 15에서 24로 확대
         this.dy = speed;  // 떨어지는 속도
         this.isActive = true;
     }
     draw(ctx) {
         if (!this.isActive) return;
-        ctx.fillStyle = "#E74C3C"; // 강렬한 빨간색
-        ctx.font = "bold 32px 'Galmuri11', 'Press Start 2P', sans-serif";
+        ctx.fillStyle = "#FF0000"; // ★ 기존보다 더 강렬한 순도 100% 빨간색
+        ctx.font = "bold 56px 'Galmuri11', sans-serif"; // ★ 글씨 크기 대폭 확대 (32px -> 56px)
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         
-        // 하얀색 테두리로 글씨를 돋보이게 렌더링
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.strokeText("F", this.x, this.y);
-        ctx.fillText("F", this.x, this.y);
+        ctx.lineWidth = 6;
+        ctx.strokeStyle = "#000000";
+        ctx.strokeText("F", this.x, this.y); // 먼저 검은 테두리를 그리고
+        ctx.fillText("F", this.x, this.y);   // 그 위에 빨간 글씨를 덮어씀
     }
     update() {
         if (!this.isActive) return;
         this.y += this.dy;
 
-        // 바닥으로 나가면 메모리에서 삭제
-        if (this.y > canvas.height + 30) this.isActive = false;
+        // 바닥으로 나가면 메모리에서 삭제 (크기가 커졌으므로 여유 범위 50으로 변경)
+        if (this.y > canvas.height + 50) this.isActive = false;
 
         // ★ 패들 충돌 검사 (바에 맞으면 바로 F 학점 엔딩 발동!)
         if (this.y + this.radius > canvas.height - paddleHeight && this.y - this.radius < canvas.height) {
@@ -223,7 +222,6 @@ class FBomb {
         }
     }
 }
-
 // === F 폭탄 업데이트 및 난이도 조절 (시간 흐름에 따라) ===
 function updateFBombs() {
     // ★ 추가됨: phase3StartTime이 0일 때(로딩 전)는 연산을 멈춰서 에러를 완벽 차단!
@@ -344,7 +342,8 @@ class Brick {
                 ctx.textBaseline = "middle";
 
                 // 블록의 정중앙 좌표를 계산하여 텍스트 쓰기
-                ctx.fillText(this.text, this.x + drawWidth / 2, this.y + drawHeight / 2);
+                // ★ maxWidth를 (drawWidth - 4)로 설정하여 블록 너비보다 글씨가 길어지면 자동 압축되도록 수정
+                ctx.fillText(this.text, this.x + drawWidth / 2, this.y + drawHeight / 2, drawWidth - 4);
             }
         }
     }
@@ -471,8 +470,8 @@ class Stage4Brick extends Brick {
         }
         
         // 배열 내용을 모두 표시하기 위해 가로 폭을 1.5배로 넓게 설정
-        this.width = brickWidth * 1.5;
-        this.height = brickHeight;
+        this.width = option.width || (brickWidth * 1.5);
+        this.height = option.height || brickHeight;
     }
 
     onHit(damage = 1) {
@@ -581,8 +580,7 @@ class SpecialBall {
             playerHp--; // 체력 깎임
             paddleHitCount += 10; // 페널티 코스트
             if (playerHp <= 0) {
-                // 게임 오버 메시지도 과제 제외하고 수정
-                endGame("특수공(팀플/랩실습)을 놓쳐 체력이 소진되었습니다!");
+                endGame("체력이 모두 소진되었습니다. 게임 오버!");
             }
         }
         
@@ -952,7 +950,7 @@ function drawTopUI() {
     // 1. HP 영역 (좌측)
     // ==========================================
     ctx.textAlign = "left"; 
-    ctx.font = "16px 'Galmuri11', 'Press Start 2P', sans-serif"; 
+    ctx.font = "16px 'Galmuri11',  sans-serif"; 
     
     ctx.lineWidth = 4;
     ctx.strokeStyle = "#000000";
@@ -976,7 +974,7 @@ function drawTopUI() {
     let scoreText = `SCORE: ${(currentScore || 0).toFixed(1)}`;
     
     ctx.textAlign = "right"; 
-    ctx.font = "16px 'Galmuri11', 'Press Start 2P', sans-serif"; 
+    ctx.font = "16px 'Galmuri11',  sans-serif"; 
     
     ctx.lineWidth = 6;
     ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
@@ -1020,7 +1018,7 @@ function drawTopUI() {
     
     if (progressText !== "") {
         ctx.textAlign = "right"; // 바(Bar)의 왼쪽 끝을 기준으로 정렬
-        ctx.font = "12px 'Galmuri11', 'Press Start 2P', sans-serif";
+        ctx.font = "12px 'Galmuri11',  sans-serif";
         ctx.lineWidth = 3;
         ctx.strokeStyle = "#000000";
         ctx.strokeText(progressText, barX - 15, 20); // HP 높이와 균형을 맞춘 Y좌표(20)
@@ -1046,7 +1044,7 @@ function drawTopUI() {
     let percentText = `${Math.floor(remainingRatio * 100)}%`;
     ctx.textAlign = "left"; 
     ctx.textBaseline = "middle";
-    ctx.font = "12px 'Galmuri11', 'Press Start 2P', sans-serif"; 
+    ctx.font = "12px 'Galmuri11',  sans-serif"; 
     
     // 테두리 적용
     ctx.lineWidth = 3;
@@ -1254,7 +1252,7 @@ function loadStage(stageIndex){
     case 3: loadLunchStage(); break;
     case 4: loadDSStage4(); break;
     case 5: loadWebprogrammingStage(); break;
-    default: endGame("모든 스테이지를 클리어했습니다!"); break;
+    default: endGame("모든 스테이지를 클리어했습니다!", true); break;
     }
 }
 
@@ -1269,7 +1267,7 @@ function loadTutorialStage(){
     const COLOR_SUBB      = "#FFC81E";
     const COLOR_OPACITY   = "#F8C463"
     canvas.style.backgroundImage = "url(./testImg/CProgramming.png)";
-    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -50);
+    const { startX, startY } = calculateCenterOffset(brickRowCount, brickColumnCount, -120);
     createGrid(brickRowCount, brickColumnCount, startX, startY, (r, c, brickX, brickY) => {
         if(r == brickRowCount-1 && c == 2){ 
             bricks.push(new Brick(brickX, brickY, {color: COLOR_OPACITY, effectFunc:()=>setBallOpacity(0.2)}));
@@ -1310,19 +1308,45 @@ function randomDiscreteMap() {
 
 function randomBossMap() {
     const Gates = Object.keys(statusMap).filter(key => statusMap[key].operation);
-    let gTop, gLeft, gRight, in1, in2, in3, isAnswerTrue;
-    do {
+    let gTop, gLeft, gRight;
+    let isSolvable = false;
+
+    // ★ 1. 풀 수 있는(T가 하나라도 나올 수 있는) 게이트 조합 찾기
+    while (!isSolvable) {
         gTop = Gates[Math.floor(Math.random() * Gates.length)];
         gLeft = Gates[Math.floor(Math.random() * Gates.length)];
         gRight = Gates[Math.floor(Math.random() * Gates.length)];
+
+        // 3개의 입력(in1, in2, in3)이 가질 수 있는 8가지 경우의 수를 전부 테스트합니다.
+        for (let i = 0; i < 8; i++) {
+            // 비트 연산을 활용해 8가지(000~111) T/F 조합 생성
+            let v1 = (i & 4) !== 0; // in1
+            let v2 = (i & 2) !== 0; // in2
+            let v3 = (i & 1) !== 0; // in3
+            
+            let mLeft = statusMap[gLeft].operation(v1, v2);
+            let mRight = statusMap[gRight].operation(v2, v3);
+            
+            // 단 하나라도 최종 결과가 T가 나올 수 있다면 이 회로는 '풀 수 있는 회로'로 판정!
+            if (statusMap[gTop].operation(mLeft, mRight)) {
+                isSolvable = true;
+                break;
+            }
+        }
+    }
+    // 초기 상태는 F로 함
+    let in1, in2, in3, isAnswerTrue;
+    do {
         in1 = Math.random() < 0.5 ? "T" : "F";
         in2 = Math.random() < 0.5 ? "T" : "F";
         in3 = Math.random() < 0.5 ? "T" : "F";
         let val1 = (in1 === "T"); let val2 = (in2 === "T"); let val3 = (in3 === "T");
+        
         let midLeftResult = statusMap[gLeft].operation(val1, val2);
         let midRightResult = statusMap[gRight].operation(val2, val3);
         isAnswerTrue = statusMap[gTop].operation(midLeftResult, midRightResult);
-    } while (isAnswerTrue); 
+        
+    } while (isAnswerTrue); // 만약 우연히 처음부터 T(정답)가 나오면, 다시 섞어서 F로 만듦
 
     return [
         [ 0,     0,   1,  "F",  1,    0,    0],               
@@ -1334,7 +1358,9 @@ function randomBossMap() {
 }
 
 function loadDiscreteStage() {
-    startScene("startDiscrete");
+    if (clearCount == 0){
+        startScene("startDiscrete");
+    }
     canvas.style.backgroundImage = "url(./testImg/Discrete.png)";
 
 
@@ -1393,7 +1419,7 @@ function loadOopStage() {
     }
 
     const totalBlockWidth = cols * (brickWidth + brickPadding) - brickPadding;
-    const { startX, startY } = calculateCenterOffset(rows, cols, -70);
+    const { startX, startY } = calculateCenterOffset(rows, cols, -120);
     const blockGrid = Array.from({ length: rows }, () => Array(cols).fill(null));
 
     const COLOR_PUBLIC    = "#3498DB"; 
@@ -1604,20 +1630,23 @@ function loadDSStage4(treeDepth = 4) {
         for (let i = 0; i < numNodes; i++) {
             let nodeCenterX = startX + i * gapX;
             if (level === treeDepth - 1) {
-                let bWidth = brickWidth ;
+                // ★ 노드 간격(gapX)을 고려하여 최대 너비가 겹치지 않게 90%로 제한
+                let bWidth = Math.min(brickWidth * 1.5, gapX * 0.9);
                 let blockX = nodeCenterX - bWidth / 2;
                 let isStack = (i % 2 === 0);
                 let dsType = isStack ? "stack" : "queue";
                 let color = isStack ? "#3498DB" : "#2ECC71";
-                bricks.push(new Stage4Brick(blockX, currentY, { color: color, dsType: dsType, effectFunc: getRandomEffect(blockX, currentY, bWidth, brickHeight) }));
+                bricks.push(new Stage4Brick(blockX, currentY, { width: bWidth, color: color, dsType: dsType, effectFunc: getRandomEffect(blockX, currentY, bWidth, brickHeight) }));
             } else {
-                let blockX = nodeCenterX - brickWidth / 2;
+                // ★ 부모 노드들도 겹치지 않도록 너비를 동적 계산
+                let bWidth = Math.min(brickWidth, gapX * 0.8);
+                let blockX = nodeCenterX - bWidth / 2;
                 let text = (level === 0) ? "Root" : "Node";
                 let color = (level === 0) ? "#F1C40F" : (i % 2 === 0 ? "#E74C3C" : "#9B59B6");
                 let effect = (level === 0) ? () => {
                     bricks.forEach(b => { if (b.status !== 0) { b.status = 0; brokenBricksCount++; } });
-                } : getRandomEffect(blockX, currentY, brickWidth, brickHeight);
-                bricks.push(new Brick(blockX, currentY, { color: color, text: text, effectFunc: effect }));
+                } : getRandomEffect(blockX, currentY, bWidth, brickHeight);
+                bricks.push(new Brick(blockX, currentY, { width: bWidth, color: color, text: text, effectFunc: effect }));
             }
             totalBricks++;
         }
@@ -1807,6 +1836,7 @@ function switchScreen(screenToDisplay, displayStyle = "flex") {
     if (currentActiveScreen) currentActiveScreen.style.display = "none";
     if (screenToDisplay) screenToDisplay.style.display = displayStyle;
     currentActiveScreen = screenToDisplay; 
+    fitWindowSize();
 }
 
 
@@ -2051,11 +2081,12 @@ window.addEventListener("load", () => {
     if (dialogueBox) {
       dialogueBox.addEventListener("click", (e) => { if (e.button === 0) nextDialogue(); });
       console.log("대화창 클릭 이벤트 연결");
-  } else {
+    } else {
       console.error("HTML에서 'quest-box' ID를 찾을 수 없습니다. HTML 코드를 확인해주세요.");
-  }
-  loadGameData();
-  fitWindowSize(); //window load 후 화면 resize 실행, 이거 없으면 화면이 안뜨네요
+    }
+    loadGameData();
+        fitWindowSize(); //window load 후 화면 resize 실행, 이거 없으면 화면이 안뜨네요
+    switchScreen(mainScreen); // load 완료 후 화면 전환
 });
 
 async function loadGameData() { //웹서버 구축 후 사용 예정
@@ -2075,6 +2106,7 @@ mainBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{
         switchScreen(mainScreen); // 메인 화면
         gamePauseScreen.style.display = "none";
+        questBox.style.display = "none";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         resizeGame(800,600);
         canvas.style.backgroundImage = "";
@@ -2086,36 +2118,6 @@ resumeBtn.addEventListener("click",()=>{
     gamePauseScreen.style.display = "none";
 });
 startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
-    currentStage = 0; 
-    switchScreen(stageSelectModal); 
-    
-    stageItemBtns.forEach(btn => { //선택가능한 스테이지 목록 갱신
-        let stageNum = Number(btn.getAttribute("value") || btn.value); 
-        
-        if (maxStage >= stageNum) {
-            btn.classList.remove("disable");
-        }
-        
-        // 버튼의 원래 텍스트 백업 (최초 1회만)
-        let originalText = btn.getAttribute("data-original-text");
-        if (!originalText) {
-            originalText = btn.innerHTML; 
-            btn.setAttribute("data-original-text", originalText);
-        }
-        
-        // ★ 스테이지별 최고 기록(객체) 가져오기
-        let bestRecord = highestGrades[stageNum];
-        if (bestRecord) {
-            // 학점에 따른 색상 부여
-            let gradeColor = (bestRecord.grade.includes("A")) ? "#FFD700" : (bestRecord.grade.includes("B")) ? "#2ECC71" : "#E74C3C";
-            // ★ [normal A] 형식으로 영어 난이도명과 함께 출력!
-            btn.innerHTML = `${originalText} <span style="color:${gradeColor}; font-weight:bold; margin-left:10px; font-family:'Galmuri11', sans-serif;">[${bestRecord.diff} ${bestRecord.grade}]</span>`;
-        } else {
-            // 기록이 없으면 원래 이름만 출력
-            btn.innerHTML = originalText;
-        }
-    });
-});startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
     currentStage = 0; 
     switchScreen(stageSelectModal); 
     
@@ -2258,28 +2260,73 @@ function calculateGrade(score, isDead) {
     if (score >= 30) return "C+";
     return "C"; // 29점 이하 (20점 이하 포함)
 }
-// === 게임 오버 처리 함수 ===
-function endGame(message) {
+// === 게임 오버 및 전체 클리어 처리 함수 ===
+function endGame(message, isAllClear = false) {
     isGameOver = true; 
     isGameStarted = false; 
-    
-    let finalGrade = calculateGrade(0, true);
-    
-    // ★ 죽어서 F학점을 받으면 가중치를 0으로 주어 기존의 성공 기록(A~C)을 덮어씌우지 않게 보호
-    let currentRecordScore = (finalGrade === "F") ? 0 : diffRank[currentDifficulty] + gradeRank[finalGrade];
-    let prevRecord = highestGrades[currentStage];
-    
-    // 기존 기록이 없거나, 새 기록의 가중치 점수가 더 높을 때만 갱신
-    if (!prevRecord || currentRecordScore > prevRecord.score) {
-        highestGrades[currentStage] = { 
-            diff: currentDifficulty, 
-            grade: finalGrade, 
-            score: currentRecordScore 
-        };
+
+    // HTML에 미리 만들어둔 성적표 요소들 가져오기
+    let finalScoreBoard = document.getElementById("finalScoreBoard");
+    let finalSubjectList = document.getElementById("finalSubjectList");
+    let finalGpaValue = document.getElementById("finalGpaValue");
+
+    // ★ 모든 스테이지를 클리어 한 '진짜 엔딩(성적표 출력)'일 경우
+    if (isAllClear) {
+        currentStage = 0; 
+        const gpaMap = { "A+": 4.5, "A": 4.0, "B+": 3.5, "B": 3.0, "C+": 2.5, "C": 2.0, "F": 0 };
+        const stageNames = ["C프로그래밍", "이산수학", "객체지향프로그래밍", "점심시간", "자료구조", "웹프로그래밍"];
+        
+        let totalGPA = 0;
+        let stageCount = 6;
+        let gradesHTML = "";
+
+        // 과목별 학점 데이터만 조립
+        for (let i = 0; i < stageCount; i++) {
+            let grade = "F"; 
+            if (i === 3) grade = "A+"; 
+            else if (highestGrades[i]) grade = highestGrades[i].grade;
+            
+            totalGPA += gpaMap[grade];
+            let gradeColor = (grade.includes("A")) ? "#FFD700" : (grade.includes("B")) ? "#2ECC71" : (grade === "F") ? "#E74C3C" : "#FFFFFF";
+            
+            // 뼈대 안에 들어갈 '알맹이(데이터)'만 생성
+            gradesHTML += `
+                <div class="final-subject-item">
+                    <span>- ${stageNames[i]}</span>
+                    <span style="color:${gradeColor}; font-weight:bold;">${grade}</span>
+                </div>`;
+        }
+
+        let avgGPA = (totalGPA / stageCount).toFixed(2); 
+
+        // JS는 HTML 뼈대 안에 내용물만 쏙쏙 집어넣고 화면을 켬!
+        gameOverMessage.innerHTML = `<div class="final-message">${message}</div>`;
+        
+        if (finalSubjectList) finalSubjectList.innerHTML = gradesHTML;
+        if (finalGpaValue) finalGpaValue.innerText = avgGPA;
+        if (finalScoreBoard) finalScoreBoard.style.display = "flex"; // 성적표 켜기
+        
+        switchScreen(gameOverScreen); 
+        
+    } 
+    // ★ 게임 중 사망한 경우 (기존 게임 오버)
+    else {
+        let finalGrade = calculateGrade(0, true); 
+        
+        let currentRecordScore = (finalGrade === "F") ? 0 : diffRank[currentDifficulty] + gradeRank[finalGrade];
+        let prevRecord = highestGrades[currentStage];
+        
+        if (!prevRecord || currentRecordScore > prevRecord.score) {
+            highestGrades[currentStage] = { diff: currentDifficulty, grade: finalGrade, score: currentRecordScore };
+        }
+        
+        gameOverMessage.innerHTML = `${message}<br><div class="game-over-grade">${finalGrade}</div>`;
+        
+        // 일반 게임 오버일 때는 성적표 UI를 숨김
+        if (finalScoreBoard) finalScoreBoard.style.display = "none"; 
+        
+        switchScreen(gameOverScreen); 
     }
-    
-    gameOverMessage.innerHTML = `${message}<br><br><span style="color:#E74C3C; font-size:32px;">성적 : ${finalGrade}</span>`;
-    switchScreen(gameOverScreen); 
 }
 
 // === 스테이지 클리어 제어 함수 ===
@@ -2419,4 +2466,4 @@ function loop() {
 }
 
 // 최초 실행시 메인화면 띄우기
-switchScreen(mainScreen);
+// 스크립트가 로드되면 바로 화면을 전환하지 않고, window.load 후에 실행됩니다.
