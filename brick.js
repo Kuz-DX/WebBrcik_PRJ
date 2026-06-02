@@ -1450,11 +1450,11 @@ function loadOopStage() {
             blockPool.push({ type: "private_X", text: "double X", color: COLOR_PRIVATE, hp: 1, indestructible: true });
             blockPool.push({ type: "public_W", text: "int getW", color: COLOR_PUBLIC, hp: 1, indestructible: false });
             blockPool.push({ type: "public_X", text: "double getX", color: COLOR_PUBLIC, hp: 1, indestructible: false });
-            blockPool.push({ type: "protected_K", text: "protected K", color: COLOR_PROTECTED, hp: 1, indestructible: false });
-            blockPool.push({ type: "protected_B", text: "protected B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_K", text: "int K", color: COLOR_PROTECTED, hp: 1, indestructible: false });
+            blockPool.push({ type: "protected_B", text: "MyData B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
             while (blockPool.length < numBlocks) blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
         } else if (layer === 1) { 
-            blockPool.push({ type: "BOSS", text: "BOSS", color: COLOR_BOSS, hp: 10, indestructible: false });
+            blockPool.push({ type: "BOSS", text: "???", color: COLOR_BOSS, hp: 10, indestructible: false ,realText:"BLUEJOA"});
         }
 
         for (let i = blockPool.length - 1; i > 0; i--) {
@@ -1529,7 +1529,7 @@ function loadOopStage() {
         };
 
         let newBrick = new BossBrick(brickX, brickY, {
-            status: initialStatus, color: initialColor, text: initialText, realText: bData.text, 
+            status: initialStatus, color: initialColor, text: initialText, realText: bData.realText || bData.text, 
             realType: bData.type, layer: bData.layer, effectFunc: effect, hp: bData.hp, indestructible: bData.indestructible
         });
         newBrick.tempData = { color: bData.color };
@@ -1880,17 +1880,17 @@ function nextDialogue() {
 }
 
 // 화면 사이즈 변경
-function resizeGame(newWidth, newHeight) {
-    canvas.width = newWidth; canvas.height = newHeight;
-    canvas.style.width = newWidth + "px"; canvas.style.height = newHeight + "px";
-    const gameContainer = document.getElementById("gameContainer");
-    if(gameContainer) { gameContainer.style.width = newWidth + "px"; gameContainer.style.height = newHeight + "px"; }
-    if(gameOverScreen) { gameOverScreen.style.width = newWidth + "px"; gameOverScreen.style.height = newHeight + "px"; }
-    if(gameClearScreen){ gameClearScreen.style.width = newWidth + "px"; gameClearScreen.style.height = newHeight + "px"; }
-    if(gamePauseScreen){ gamePauseScreen.style.width = newWidth + "px"; gamePauseScreen.style.height = newHeight + "px"; }
-    paddleX = (newWidth - paddleWidth) / 2; // 패들을 새로운 화면 중앙으로 보정
-    x = newWidth / 2; y = newHeight - 30;
-}
+// function resizeGame(newWidth, newHeight) {
+//     canvas.width = newWidth; canvas.height = newHeight;
+//     canvas.style.width = newWidth + "px"; canvas.style.height = newHeight + "px";
+//     const gameContainer = document.getElementById("gameContainer");
+//     if(gameContainer) { gameContainer.style.width = newWidth + "px"; gameContainer.style.height = newHeight + "px"; }
+//     if(gameOverScreen) { gameOverScreen.style.width = newWidth + "px"; gameOverScreen.style.height = newHeight + "px"; }
+//     if(gameClearScreen){ gameClearScreen.style.width = newWidth + "px"; gameClearScreen.style.height = newHeight + "px"; }
+//     if(gamePauseScreen){ gamePauseScreen.style.width = newWidth + "px"; gamePauseScreen.style.height = newHeight + "px"; }
+//     paddleX = (newWidth - paddleWidth) / 2; // 패들을 새로운 화면 중앙으로 보정
+//     x = newWidth / 2; y = newHeight - 30;
+// }
 
 // 💡 창 크기에 맞춰 물리 해상도를 유지한 채 화면 스타일(CSS)만 축소/확대하는 함수
 function fitWindowSize() {
@@ -1998,7 +1998,9 @@ function cheatKeyHandler(e) {
             if (b.realType !== "BOSS" && b.status !== 0) {
                 b.status = 0; destroyedByCheat++;
             } else if (b.realType === "BOSS" && b.status !== 0) {
+                b.text = b.realText;
                 b.expand(); b.hp = 10; b.status = 1;
+
             }
         }
         brokenBricksCount += destroyedByCheat;
