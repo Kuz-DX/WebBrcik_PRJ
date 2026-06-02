@@ -344,7 +344,8 @@ class Brick {
                 ctx.textBaseline = "middle";
 
                 // 블록의 정중앙 좌표를 계산하여 텍스트 쓰기
-                ctx.fillText(this.text, this.x + drawWidth / 2, this.y + drawHeight / 2);
+                // ★ maxWidth를 (drawWidth - 4)로 설정하여 블록 너비보다 글씨가 길어지면 자동 압축되도록 수정
+                ctx.fillText(this.text, this.x + drawWidth / 2, this.y + drawHeight / 2, drawWidth - 4);
             }
         }
     }
@@ -471,8 +472,8 @@ class Stage4Brick extends Brick {
         }
         
         // 배열 내용을 모두 표시하기 위해 가로 폭을 1.5배로 넓게 설정
-        this.width = brickWidth * 1.5;
-        this.height = brickHeight;
+        this.width = option.width || (brickWidth * 1.5);
+        this.height = option.height || brickHeight;
     }
 
     onHit(damage = 1) {
@@ -1604,20 +1605,23 @@ function loadDSStage4(treeDepth = 4) {
         for (let i = 0; i < numNodes; i++) {
             let nodeCenterX = startX + i * gapX;
             if (level === treeDepth - 1) {
-                let bWidth = brickWidth ;
+                // ★ 노드 간격(gapX)을 고려하여 최대 너비가 겹치지 않게 90%로 제한
+                let bWidth = Math.min(brickWidth * 1.5, gapX * 0.9);
                 let blockX = nodeCenterX - bWidth / 2;
                 let isStack = (i % 2 === 0);
                 let dsType = isStack ? "stack" : "queue";
                 let color = isStack ? "#3498DB" : "#2ECC71";
-                bricks.push(new Stage4Brick(blockX, currentY, { color: color, dsType: dsType, effectFunc: getRandomEffect(blockX, currentY, bWidth, brickHeight) }));
+                bricks.push(new Stage4Brick(blockX, currentY, { width: bWidth, color: color, dsType: dsType, effectFunc: getRandomEffect(blockX, currentY, bWidth, brickHeight) }));
             } else {
-                let blockX = nodeCenterX - brickWidth / 2;
+                // ★ 부모 노드들도 겹치지 않도록 너비를 동적 계산
+                let bWidth = Math.min(brickWidth, gapX * 0.8);
+                let blockX = nodeCenterX - bWidth / 2;
                 let text = (level === 0) ? "Root" : "Node";
                 let color = (level === 0) ? "#F1C40F" : (i % 2 === 0 ? "#E74C3C" : "#9B59B6");
                 let effect = (level === 0) ? () => {
                     bricks.forEach(b => { if (b.status !== 0) { b.status = 0; brokenBricksCount++; } });
-                } : getRandomEffect(blockX, currentY, brickWidth, brickHeight);
-                bricks.push(new Brick(blockX, currentY, { color: color, text: text, effectFunc: effect }));
+                } : getRandomEffect(blockX, currentY, bWidth, brickHeight);
+                bricks.push(new Brick(blockX, currentY, { width: bWidth, color: color, text: text, effectFunc: effect }));
             }
             totalBricks++;
         }
