@@ -90,27 +90,29 @@
     { "speaker": "나", "text": "깔끔하게 웹프 끝내고 집에 가서 푹 쉬자" },
     { "speaker": "Little Old", "text": "지난 시간에 배웠던 내용을 활용해서" },
     { "speaker": "Little Old", "text": "간단한 실습 하나 해볼게요" },
-    { "speaker": "Little Old", "text": "playjs_p2에 여러분의 현재 모습을 찍어서 올리시면 됩니다" },
+    { "speaker": "Little Old", "text": "playjs_p1에 여러분의 현재 모습을 찍어서 올리시면 됩니다" },
     { "speaker": "Little Old", "text": "그럼 한번 해 보시죠" },
     { "speaker": "나", "text": "지난 시간? 기억 안나는데" },
     { "speaker": "나", "text": "어서 빨리 도망쳐야겠어" },
     { "speaker": "나", "text": "강의를 빠르게 끝내보자" }
   ],
-  "startWebprogammingP2" : [
+  "startWebprogrammingP2" : [
     { "speaker": "Little Old", "text": "여러분, 이정도는 어렵지 않아요" },
     { "speaker": "Little Old", "text": "동영상 강의에 있는 내용이에요" },
     { "speaker": "Little Old", "text": "혹시 강의를 안들으셨나요?" },
     { "speaker": "Little Old", "text": "제가 강의를 듣지 않은 여러분을 위해 선물을 준비했어요." },
     { "speaker": "Little Old", "text": "선물은 바로..." },
-    { "speaker": "Little Old", "text": "랩실습과 팀프로젝트, 과제입니다" },
+    { "speaker": "Little Old", "text": "랩실습과 팀프로젝트, 과제입니다" , "layout" : "phase2"},
     { "speaker": "Little Old", "text": "그럼 한번 해 보시죠" }
   ],
-  "ending" : [
+  "startWebprogrammingP3" : [
     { "speaker": "Little Old", "text": "고작 이정도도 겨우 따라오시는건가요" },
     { "speaker": "Little Old", "text": "안되겠네요, 버티지 못하는 여러분을 위해 또다른 선물" },
     { "speaker": "Little Old", "text": "F입니다. 버텨보시죠" },
-    { "speaker": "Little Old", "text": "F입니다. 버텨보시죠" ,"layout" : "F" },
-    { "speaker": "나", "text": "안돼... F만은 안돼..." },
+    { "speaker": "Little Old", "text": "F입니다. 버텨보시죠" ,"layout" : "phase3" },
+    { "speaker": "나", "text": "안돼... F만은 안돼..." }
+  ],
+  "ending" : [
     { "speaker": "", "text": "" },
     { "speaker": "", "text": "." },
     { "speaker": "", "text": "..." },

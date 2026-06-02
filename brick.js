@@ -1704,7 +1704,7 @@ function loadWebPhase2() {
     resetBallAndPaddle();
 
     console.log("웹 프로그래밍 2페이즈: JS가동");
-    startScene("startWebprogammingP2");
+    startScene("startWebprogrammingP2");
 
     let beBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
         // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
@@ -1723,7 +1723,7 @@ function loadWebPhase2() {
 function loadWebPhase3() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
     fBombs = []; // F 폭탄 초기화
-    
+    startScene("startWebprogrammingP3");
     // ★ 자동 클리어 방지: 깰 수 없는 가상의 목표를 주어 시간이 끝날 때까지 버티게 만듭니다.
     totalBricks = 9999; 
     resetBallAndPaddle();
@@ -1799,8 +1799,11 @@ function showDialogue() {
             canvas.style.visibility = "hidden";
             gameClearScreen.style.display = "none";
             break;
-        case "F":
-            //추가 예정
+        case "phase2":
+            canvas.style.backgroundImage = "url(./testImg/phase2.png)";
+            break;
+        case "phase3":
+            canvas.style.backgroundImage = "url(./testImg/phase3.png)";
             break;
         case "white":
             questBox.style.backgroundColor = "rgba(143, 143, 143, 0.9)";
