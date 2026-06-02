@@ -1836,6 +1836,7 @@ function switchScreen(screenToDisplay, displayStyle = "flex") {
     if (currentActiveScreen) currentActiveScreen.style.display = "none";
     if (screenToDisplay) screenToDisplay.style.display = displayStyle;
     currentActiveScreen = screenToDisplay; 
+    fitWindowSize();
 }
 
 
@@ -1909,17 +1910,17 @@ function nextDialogue() {
 }
 
 // 화면 사이즈 변경
-function resizeGame(newWidth, newHeight) {
-    canvas.width = newWidth; canvas.height = newHeight;
-    canvas.style.width = newWidth + "px"; canvas.style.height = newHeight + "px";
-    const gameContainer = document.getElementById("gameContainer");
-    if(gameContainer) { gameContainer.style.width = newWidth + "px"; gameContainer.style.height = newHeight + "px"; }
-    if(gameOverScreen) { gameOverScreen.style.width = newWidth + "px"; gameOverScreen.style.height = newHeight + "px"; }
-    if(gameClearScreen){ gameClearScreen.style.width = newWidth + "px"; gameClearScreen.style.height = newHeight + "px"; }
-    if(gamePauseScreen){ gamePauseScreen.style.width = newWidth + "px"; gamePauseScreen.style.height = newHeight + "px"; }
-    paddleX = (newWidth - paddleWidth) / 2; // 패들을 새로운 화면 중앙으로 보정
-    x = newWidth / 2; y = newHeight - 30;
-}
+// function resizeGame(newWidth, newHeight) {
+//     canvas.width = newWidth; canvas.height = newHeight;
+//     canvas.style.width = newWidth + "px"; canvas.style.height = newHeight + "px";
+//     const gameContainer = document.getElementById("gameContainer");
+//     if(gameContainer) { gameContainer.style.width = newWidth + "px"; gameContainer.style.height = newHeight + "px"; }
+//     if(gameOverScreen) { gameOverScreen.style.width = newWidth + "px"; gameOverScreen.style.height = newHeight + "px"; }
+//     if(gameClearScreen){ gameClearScreen.style.width = newWidth + "px"; gameClearScreen.style.height = newHeight + "px"; }
+//     if(gamePauseScreen){ gamePauseScreen.style.width = newWidth + "px"; gamePauseScreen.style.height = newHeight + "px"; }
+//     paddleX = (newWidth - paddleWidth) / 2; // 패들을 새로운 화면 중앙으로 보정
+//     x = newWidth / 2; y = newHeight - 30;
+// }
 
 // 💡 창 크기에 맞춰 물리 해상도를 유지한 채 화면 스타일(CSS)만 축소/확대하는 함수
 function fitWindowSize() {
@@ -2078,11 +2079,12 @@ window.addEventListener("load", () => {
     if (dialogueBox) {
       dialogueBox.addEventListener("click", (e) => { if (e.button === 0) nextDialogue(); });
       console.log("대화창 클릭 이벤트 연결");
-  } else {
+    } else {
       console.error("HTML에서 'quest-box' ID를 찾을 수 없습니다. HTML 코드를 확인해주세요.");
-  }
-  loadGameData();
-  fitWindowSize(); //window load 후 화면 resize 실행, 이거 없으면 화면이 안뜨네요
+    }
+    loadGameData();
+        fitWindowSize(); //window load 후 화면 resize 실행, 이거 없으면 화면이 안뜨네요
+    switchScreen(mainScreen); // load 완료 후 화면 전환
 });
 
 async function loadGameData() { //웹서버 구축 후 사용 예정
@@ -2461,4 +2463,4 @@ function loop() {
 }
 
 // 최초 실행시 메인화면 띄우기
-switchScreen(mainScreen);
+// 스크립트가 로드되면 바로 화면을 전환하지 않고, window.load 후에 실행됩니다.
