@@ -9,9 +9,7 @@ body {
 
 #gameContainer {
     position: relative; 
-    width: 100%; 
-    max-width: 1000px; /* 브라우저가 너무 넓을 때를 대비한 최대 한계치 */
-    aspect-ratio: 5 / 4; /* 🔥 핵심: 가로 세로 비율을 무조건 5:4로 락(Lock) */
+    width: 100%;  
     margin: 0 auto;
     background-color: #fff; 
     font-family: 'Galmuri11', 'Courier New', sans-serif;
@@ -329,10 +327,14 @@ body {
   border: 2px solid #7f8c8d;
   border-radius: 6px;
   padding: 25px;
-  width: 80%;
+  width: 100%;
   max-width: 320px;
   text-align: left;
   color: #ffffff;
+}
+#howToPlayModal .modal-content{
+  max-width: 600px;
+  width: 90%;
 }
 .modal-content h2 {
   margin-top: 0;
@@ -377,7 +379,7 @@ code { background: #2a2b2d; padding: 2px 6px; border-radius: 4px; color: #fff; }
   transition: background 0.2s;
 }
 #closeHowToPlayBtn{
-  width: 30%;
+  width: 10%;
 }
 
 .close-btn:hover {
