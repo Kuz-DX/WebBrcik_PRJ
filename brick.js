@@ -413,31 +413,31 @@ class BossBrick extends Brick {
         }
 
         // 보스 체력바 렌더링
-        if (this.realType === "BOSS" && this.status === 1 && this.hp > 0) {
-            this.drawHealthBar(ctx);
-        }
+        // if (this.realType === "BOSS" && this.status === 1 && this.hp > 0) {
+        //     this.drawHealthBar(ctx);
+        // }
     }
 
-    drawHealthBar(ctx) { //체력바 따로 뺌
-        const barWidth = this.width - 10; 
-        const barHeight = 4;              
-        const barX = this.x + 5;
-        const barY = this.y + 3;
+    // drawHealthBar(ctx) { //체력바 따로 뺌
+    //     const barWidth = this.width - 10; 
+    //     const barHeight = 4;              
+    //     const barX = this.x + 5;
+    //     const barY = this.y + 3;
 
-        // 배경(빨간색)
-        ctx.fillStyle = "#FF0000";
-        ctx.fillRect(barX, barY, barWidth, barHeight);
+    //     // 배경(빨간색)
+    //     ctx.fillStyle = "#FF0000";
+    //     ctx.fillRect(barX, barY, barWidth, barHeight);
 
-        // 현재 체력(초록색)
-        const currentWidth = (this.hp / this.maxHp) * barWidth;
-        ctx.fillStyle = "#00FF00";
-        ctx.fillRect(barX, barY, currentWidth, barHeight);
+    //     // 현재 체력(초록색)
+    //     const currentWidth = (this.hp / this.maxHp) * barWidth;
+    //     ctx.fillStyle = "#00FF00";
+    //     ctx.fillRect(barX, barY, currentWidth, barHeight);
 
-        // 테두리(검은색)
-        ctx.strokeStyle = "#000000";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(barX, barY, barWidth, barHeight);
-    }
+    //     // 테두리(검은색)
+    //     ctx.strokeStyle = "#000000";
+    //     ctx.lineWidth = 1;
+    //     ctx.strokeRect(barX, barY, barWidth, barHeight);
+    // }
 
     expand() { //보스 커지는거
         if (this.realType === "BOSS" && this.status === "LOCK") {
