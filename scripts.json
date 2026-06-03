@@ -5,7 +5,7 @@
     { "speaker": "나", "text": "이제 막 9시네" },
     { "speaker": "나", "text": "오늘 하루도 잘 버텨보자..." },
     { "speaker": "나", "text": "강의 언제 끝나냐..."},
-    { "speaker": "나", "text": "어라? 이게 뭐지?" , "layout" : "flex"},
+    { "speaker": "나", "text": "어라? 이게 뭐지?" , "layout" : "play"},
     { "speaker": "나", "text": "이건 벽돌 깨기 게임 아니야?" },
     { "speaker": "나", "text": "이게 왜 ...." },
     { "speaker": "나", "text": "일단 한번 부숴볼까?" }

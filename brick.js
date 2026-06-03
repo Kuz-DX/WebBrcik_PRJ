@@ -643,6 +643,93 @@ class SpecialBall {
     }
 }
 
+//배경음악 클래스, 시작하면 web stage 클리어까지 안꺼짐. esc 상태에서만 중지
+const BGMManager = {
+    audio: null,
+    isInitialized: false,
+
+    //초기화 
+    init() {
+        if (this.isInitialized) return;
+
+        this.audio = new Audio();
+        this.audio.src = "./testImg/Philip Glass - Opening (Official Video).mp3"; 
+        
+        this.audio.loop = true;          
+        this.audio.volume = 0;          
+        this.isInitialized = true;
+    },
+
+    play() {
+        this.init(); 
+
+        this.audio.play()
+            .then(() => {
+                this.fadeIn(0.25, 1500); // 1.5초 동안  fade in
+            })
+            .catch(error => {
+                console.warn("재생 오류.", error);
+            });
+    },
+
+    // 일시 정지 (오직 esc 상태에서만)
+    pause() {
+        if (!this.audio) return;
+        if (BGMManager.isPlaying()) {
+        this.fadeOut(0, 500, () => this.audio.pause()); // 노래 나올 때만 0.5초 동안 꺼진 후 일시정지
+    }
+    },
+
+    //볼륨 페이드 인 로직
+    fadeIn(targetVolume, duration) {
+        let currentVolume = 0;
+        const intervalTime = 50; // 0.05초마다 갱신
+        const step = targetVolume / (duration / intervalTime);
+
+        const fadeTimer = setInterval(() => {
+            currentVolume += step;
+            if (currentVolume >= targetVolume) {
+                currentVolume = targetVolume;
+                clearInterval(fadeTimer);
+            }
+            this.audio.volume = currentVolume;
+        }, intervalTime);
+    },
+
+    //볼륨 페이드 아웃 로직
+    fadeOut(targetVolume, duration, callback) {
+        let currentVolume = this.audio.volume;
+        const intervalTime = 50;
+        const step = currentVolume / (duration / intervalTime);
+
+        const fadeTimer = setInterval(() => {
+            currentVolume -= step;
+            if (currentVolume <= targetVolume) {
+                currentVolume = targetVolume;
+                clearInterval(fadeTimer);
+                if (callback) callback(); // 페이드 아웃이 완전히 끝나면
+            }
+            this.audio.volume = currentVolume;
+        }, intervalTime);
+    },
+    stop() {
+    if (!this.audio) return;
+
+    // 1초 동안 음악을 fade out 완전히 초기화시킵니다.
+    this.fadeOut(0, 1000, () => {
+        this.audio.pause();      // 음악 정지
+        this.audio.currentTime = 0; //  재생 위치를 맨 처음으로 되돌림 
+        
+        console.log("BGM이 완전히 종료되고 초기화되었습니다.");
+        });
+    },
+    isPlaying() {
+    // 오디오 객체가 아직 안 만들어졌거나, 멈춤(paused) 상태라면 false 리턴
+    if (!this.audio) return false;
+    return !this.audio.paused; // paused가 false일 때 전체를 true로 뒤집음
+}
+};
+
 
 // ==========================================
 // 4. 물리 엔진 및 게임 로직 (충돌, 이동, 아이템)
@@ -1859,6 +1946,10 @@ function showDialogue() {
       dialogueEl.innerText = currentLine.text;
       const layout = currentLine.layout;
       switch(layout){
+        case "play":
+            canvas.style.visibility = "visible";
+            BGMManager.play();
+            break;
         case "flex":
             canvas.style.visibility = "visible";
             break;
@@ -1882,6 +1973,7 @@ function showDialogue() {
             speakerEl.style.backgroundColor = "rgba(0, 0, 0, 1)";
             questBox.style.color = "#ffd700";
             dialogueEl.style.color = "#fff";
+            BGMManager.stop();
             break;
         case "lunchEnd":
             currentStage++;
@@ -2073,6 +2165,7 @@ window.addEventListener("keydown", (e) => {
   if (e.key === 'Escape' && !isGameOver){
     isGameStarted = false;
     gamePauseScreen.style.display = "flex";
+    BGMManager.pause();
   }
 });
 startBtn.addEventListener('click', () => {
@@ -2107,6 +2200,9 @@ async function loadGameData() { //웹서버 구축 후 사용 예정
 }
 restartBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{ if(isCleared) currentStage--; initGame(); });
+    if (!BGMManager.isPlaying()) {
+        BGMManager.play();
+    }
 });
 mainBtn.forEach((item)=>{
     item.addEventListener("click", ()=>{
@@ -2114,7 +2210,9 @@ mainBtn.forEach((item)=>{
         isGameOver = true; 
         isGameStarted = false;
         if (animationId !== null) cancelAnimationFrame(animationId);
-
+        if (!BGMManager.isPlaying()) {
+        BGMManager.play();
+    }
         
         switchScreen(mainScreen); // 메인 화면
         gamePauseScreen.style.display = "none";
@@ -2126,6 +2224,9 @@ mainBtn.forEach((item)=>{
 });
 nextBtn.addEventListener("click",initGame); //다음으로 버튼
 resumeBtn.addEventListener("click",()=>{
+    if (!BGMManager.isPlaying()) {
+        BGMManager.play();
+    }
     isGameStarted = true;
     gamePauseScreen.style.display = "none";
 });
