@@ -53,6 +53,7 @@ const clearBtns = document.getElementById("clearBtn");
 const howToPlayBtn = document.getElementById("howToPlayBtn");
 const howToPlayModal = document.getElementById("howToPlayModal");
 const closeHowToPlayBtn = document.getElementById("closeHowToPlayBtn");
+const bgmToggleBtn = document.getElementById("bgmToggleBtn");
 
 // 게임 루프 및 흐름 제어 변수
 let animationId = null; // 애니메이션 루프 ID를 저장할 변수
@@ -647,6 +648,7 @@ class SpecialBall {
 const BGMManager = {
     audio: null,
     isInitialized: false,
+    isMuted: false,
 
     //초기화 
     init() {
@@ -661,6 +663,9 @@ const BGMManager = {
     },
 
     play() {
+        if(this.isMuted) return;
+        if(!BGMManager.isPlaying()){ //재생 중이 아닐때만
+
         this.init(); 
 
         this.audio.play()
@@ -670,6 +675,7 @@ const BGMManager = {
             .catch(error => {
                 console.warn("재생 오류.", error);
             });
+        }
     },
 
     // 일시 정지 (오직 esc 상태에서만)
@@ -1952,6 +1958,7 @@ function showDialogue() {
             break;
         case "flex":
             canvas.style.visibility = "visible";
+            BGMManager.play();
             break;
         case "none":
             canvas.style.visibility = "hidden";
@@ -2290,6 +2297,18 @@ diffItemBtns.forEach(btn => { //난이도 변경 이벤트
 });
 optionBtn.addEventListener("click",()=>{ //옵션창 열기
     switchScreen(optionModal);
+    function updateBgmButtonUI() {
+        if (!bgmToggleBtn) return;
+        
+        if (BGMManager.isPlaying()) {
+            bgmToggleBtn.innerText = "켜짐";
+            bgmToggleBtn.style.color = "#f1c40f";
+        } else {
+            bgmToggleBtn.innerText = "꺼짐";
+            bgmToggleBtn.style.color = "#7f8c8d";
+        }
+    }
+    updateBgmButtonUI();
 });
 closeOptionBtn.addEventListener("click",()=>{ //옵션창 닫기
     switchScreen(mainScreen);
@@ -2311,6 +2330,22 @@ paddleSkinSelect.addEventListener("change", (e) => { //패들 이미지 선택 �
     const val = e.target.value;
     paddleSkinType = val;
 });
+bgmToggleBtn.addEventListener('click', () => { //브금 토글 이벤트
+            // 현재 음악이 재생 중인지 체크
+            if (BGMManager.isPlaying()) {
+                BGMManager.pause();                 // 음악 끄기 
+                bgmToggleBtn.innerText = "꺼짐";  // 버튼 텍스트 변경
+                bgmToggleBtn.style.color = "#7f8c8d"; 
+                BGMManager.isMuted = true;
+            } 
+            // ② 음악이 멈춰있는 상태라면
+            else {
+                BGMManager.play();                  // 음악 켜기 
+                bgmToggleBtn.innerText = "켜짐";  // 버튼 텍스트 변경
+                bgmToggleBtn.style.color = "#f1c40f"; 
+                BGMManager.isMuted = false;
+            }
+        });
 
 howToPlayBtn.addEventListener("click",()=>{
     switchScreen(howToPlayModal);
