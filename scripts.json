@@ -5,7 +5,7 @@
     { "speaker": "나", "text": "이제 막 9시네" },
     { "speaker": "나", "text": "오늘 하루도 잘 버텨보자..." },
     { "speaker": "나", "text": "강의 언제 끝나냐..."},
-    { "speaker": "나", "text": "어라? 이게 뭐지?" , "layout" : "flex"},
+    { "speaker": "나", "text": "어라? 이게 뭐지?" , "layout" : "play"},
     { "speaker": "나", "text": "이건 벽돌 깨기 게임 아니야?" },
     { "speaker": "나", "text": "이게 왜 ...." },
     { "speaker": "나", "text": "일단 한번 부숴볼까?" }
@@ -85,7 +85,7 @@
     { "speaker": "나", "text": "쨀까?" }
   ],
   "startWebprogramming" : [
-    { "speaker": "나", "text": "항상 새관 엘리베이터는 타기 힘들단 말이지" },
+    { "speaker": "나", "text": "항상 새관 엘리베이터는 타기 힘들단 말이지", "layout" : "flex" },
     { "speaker": "나", "text": "걸어올 수도 없는 노릇이고" },
     { "speaker": "나", "text": "깔끔하게 웹프 끝내고 집에 가서 푹 쉬자" },
     { "speaker": "Little Old", "text": "지난 시간에 배웠던 내용을 활용해서" },
