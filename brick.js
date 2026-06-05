@@ -54,6 +54,7 @@ const howToPlayBtn = document.getElementById("howToPlayBtn");
 const howToPlayModal = document.getElementById("howToPlayModal");
 const closeHowToPlayBtn = document.getElementById("closeHowToPlayBtn");
 const bgmToggleBtn = document.getElementById("bgmToggleBtn");
+const bgmVolume = document.getElementById("bgmVolume");
 
 // 게임 루프 및 흐름 제어 변수
 let animationId = null; // 애니메이션 루프 ID를 저장할 변수
@@ -361,6 +362,8 @@ class BossBrick extends Brick {
         
         this.realText = option.realText || option.text || ""; 
         this.realType = option.realType || ""; 
+        this.borderColor = option.borderColor || "";
+        this.borderWidth = option.borderWidth || 4;
 
         //  이미지 경로가 옵션으로 들어오면 Image 객체 생성!
         if (option.imageSrc) {
@@ -402,6 +405,14 @@ class BossBrick extends Brick {
             ctx.fillStyle = this.color; 
             ctx.fill();
             ctx.closePath();
+        }
+
+        if (this.borderColor) {
+            ctx.save();
+            ctx.strokeStyle = this.borderColor;
+            ctx.lineWidth = this.borderWidth;
+            ctx.strokeRect(this.x, this.y, drawWidth, drawHeight);
+            ctx.restore();
         }
 
         // 상태가 "LOCK"이더라도 자신의 고유 텍스트를 출력
@@ -649,6 +660,7 @@ const BGMManager = {
     audio: null,
     isInitialized: false,
     isMuted: false,
+    defaultVolume: 0.25,
 
     //초기화 
     init() {
@@ -656,25 +668,22 @@ const BGMManager = {
 
         this.audio = new Audio();
         this.audio.src = "./testImg/Philip Glass - Opening (Official Video).mp3"; 
-        
-        this.audio.loop = true;          
-        this.audio.volume = 0;          
+        this.audio.loop = true;
+        this.audio.volume = this.defaultVolume;
         this.isInitialized = true;
     },
 
     play() {
         if(this.isMuted) return;
         if(!BGMManager.isPlaying()){ //재생 중이 아닐때만
-
-        this.init(); 
-
-        this.audio.play()
-            .then(() => {
-                this.fadeIn(0.25, 1500); // 1.5초 동안  fade in
-            })
-            .catch(error => {
-                console.warn("재생 오류.", error);
-            });
+            this.init(); 
+            this.audio.play()
+                .then(() => {
+                    this.fadeIn(this.defaultVolume, 1500); // 1.5초 동안 fade in to defaultVolume
+                })
+                .catch(error => {
+                    console.warn("재생 오류.", error);
+                });
         }
     },
 
@@ -728,6 +737,14 @@ const BGMManager = {
         
         console.log("BGM이 완전히 종료되고 초기화되었습니다.");
         });
+    },
+    setVolume(percent) {
+        const vol = Math.max(0, Math.min(100, Number(percent))) / 100;
+        this.defaultVolume = vol;
+        if (!this.audio) {
+            this.init();
+        }
+        this.audio.volume = vol;
     },
     isPlaying() {
     // 오디오 객체가 아직 안 만들어졌거나, 멈춤(paused) 상태라면 false 리턴
@@ -1769,13 +1786,15 @@ function loadWebPhase1() {
     console.log("웹 프로그래밍 1페이즈: HTML 시작 (행 단위 독립 적재 시스템)");
     
     bricks = []; bombs = []; brokenBricksCount = 0; 
-    totalBricks = 9999; // 💡 오직 보스 처치로만 클리어 판정 제어
+    totalBricks = 9999; // 오직 보스 처치로만 클리어 판정 제어
     resetBallAndPaddle(); 
 
     // 1. 메인 보스 (HTML UI)
     let feBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
-        color: "#E44D26", text: "색상 출력하기 테이블", hp: 7, realType: "BOSS",
+        imageSrc: "./testImg/hangman0.png",
+        color: "#E44D26", text: "", hp: 7, realType: "BOSS",
         width: canvas.width*0.2, height: canvas.height*0.15,
+        borderColor: "#000000", borderWidth: 2,
         effectFunc: () => { checkWebPhaseClear(); } 
     });
     bricks.push(feBoss);
@@ -1847,7 +1866,7 @@ function loadWebPhase1() {
         }
     });
 
-    // 🔥 [무적화] 삭제 버튼 HP 고정 (부서지지 않음)
+    // [무적화] 삭제 버튼 HP 고정 (부서지지 않음)
     removeBtn.onHit = function() {
         if (typeof this.effectFunc === "function") this.effectFunc();
     };
@@ -1867,9 +1886,10 @@ function loadWebPhase2() {
 
     let beBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
         // 2페이즈 전용 백엔드 보스 이미지 삽입
-   //     imageSrc: "./testImg/be_boss.png", 
-        color: "#2ECC71", text: "Node.js API", hp: 15, realType: "BOSS",
+       imageSrc: "./testImg/Phase2Boss.png", 
+        color: "#2ECC71", text: "", hp: 15, realType: "BOSS",
         width: canvas.width*0.2, height: canvas.height*0.15,
+        borderColor: "#000000", borderWidth: 2,
         effectFunc: () => { checkWebPhaseClear(); } 
     });
 
@@ -2299,13 +2319,17 @@ optionBtn.addEventListener("click",()=>{ //옵션창 열기
     switchScreen(optionModal);
     function updateBgmButtonUI() {
         if (!bgmToggleBtn) return;
-        
-        if (BGMManager.isPlaying()) {
-            bgmToggleBtn.innerText = "켜짐";
-            bgmToggleBtn.style.color = "#f1c40f";
-        } else {
+        // Toggle ON when volume > 0 and not explicitly muted; OFF when volume == 0 or muted
+        const currentVol = (BGMManager.audio ? BGMManager.audio.volume : BGMManager.defaultVolume) || 0;
+        if (BGMManager.isMuted || currentVol === 0) {
             bgmToggleBtn.innerText = "꺼짐";
             bgmToggleBtn.style.color = "#7f8c8d";
+        } else {
+            bgmToggleBtn.innerText = "켜짐";
+            bgmToggleBtn.style.color = "#f1c40f";
+        }
+        if (bgmVolume) {
+            bgmVolume.value = Math.round(currentVol * 100);
         }
     }
     updateBgmButtonUI();
@@ -2340,12 +2364,38 @@ bgmToggleBtn.addEventListener('click', () => { //브금 토글 이벤트
             } 
             // 음악이 멈춰있는 상태
             else {
+                // If slider is at 0, set to default volume first
+                let vol = bgmVolume ? parseInt(bgmVolume.value, 10) || 0 : Math.round(BGMManager.defaultVolume * 100);
+                if (vol === 0) {
+                    vol = Math.round(BGMManager.defaultVolume * 100);
+                    if (bgmVolume) bgmVolume.value = vol;
+                    BGMManager.setVolume(vol);
+                }
+                BGMManager.isMuted = false;
                 BGMManager.play();                  // 음악 켜기 
                 bgmToggleBtn.innerText = "켜짐";  // 버튼 텍스트 변경
                 bgmToggleBtn.style.color = "#f1c40f"; 
-                BGMManager.isMuted = false;
             }
         });
+
+    // 볼륨 슬라이더 이벤트 처리
+    if (bgmVolume) {
+        bgmVolume.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value, 10) || 0;
+            BGMManager.setVolume(val);
+            if (val === 0) {
+                // volume 0 -> ensure music paused and toggle off
+                BGMManager.isMuted = true;
+                if (BGMManager.isPlaying()) BGMManager.pause();
+                if (bgmToggleBtn) { bgmToggleBtn.innerText = "꺼짐"; bgmToggleBtn.style.color = "#7f8c8d"; }
+            } else {
+                // volume > 0 -> unmute and start playing if not already
+                BGMManager.isMuted = false;
+                if (!BGMManager.isPlaying()) BGMManager.play();
+                if (bgmToggleBtn) { bgmToggleBtn.innerText = "켜짐"; bgmToggleBtn.style.color = "#f1c40f"; }
+            }
+        });
+    }
 
 howToPlayBtn.addEventListener("click",()=>{ // htp 창 이벤트 리스너
     switchScreen(howToPlayModal);
