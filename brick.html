@@ -2,25 +2,25 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>벽돌깨기 게임</title>
+    <title>종강종강종강종강</title>
     <link rel="stylesheet" href="brick.css">
 </head>
 <body>
     
-    <div id="gameContainer">
+    <div id="gameContainer"> <!--전체 컨테이너-->
         <div id="mainScreen" class="screen-overlay">
         <div class="title-container">
             <h1 class="game-title">5월의 어느날</h1>
             <p class="game-subtitle">집에 가고 싶어요</p>
         </div>
-        <div class="menu-container-br">
+        <div class="menu-container-br"> <!--버튼 컨테이너-->
             <button id="startNewGameBtn" class="menu-btn">시작</button>
             <button id="difficultyBtn" class="menu-btn">난이도</button>
             <button id="howToPlayBtn" class="menu-btn">플레이 방법</button>
             <button id="optionBtn" class="menu-btn">옵션</button>
         </div>
         </div> 
-        <div id="stageSelectModal" class="modal-overlay">
+        <div id="stageSelectModal" class="modal-overlay"> <!--스테이지 선택창-->
             <div class="modal-content select-modal">
             <h2>스테이지 선택</h2>
             <div class="stage-list">
@@ -34,7 +34,7 @@
             </div>
         </div>
         
-    <div id="difficultyModal" class="modal-overlay">
+    <div id="difficultyModal" class="modal-overlay"> <!--난이도 선택창-->
         <div class="modal-content difficulty-modal">
             <h2>난이도 선택</h2>
             <div class="difficulty-list">
@@ -46,7 +46,7 @@
             <button id="closeDifficultyBtn" class="close-btn">닫기</button>
         </div>
     </div>
-    <div id="howToPlayModal" class="modal-overlay">
+    <div id="howToPlayModal" class="modal-overlay"><!--플레이 방법 안내창-->
         <div class="modal-content">
             <div class="modal-header">
                 <h2>플레이 방법</h2>
@@ -91,11 +91,11 @@
             </div>
         </div>
     </div>
-    <div id="optionSelectModal" class="modal-overlay">
+    <div id="optionSelectModal" class="modal-overlay"> <!--옵션 선택창-->
         <div class="modal-content option-modal">
             <h2>옵션 설정</h2>
             <div class="option-item">
-                <label for="ballSkinSelect">공 :</label>
+                <label for="ballSkinSelect">공 :</label> <!--공 선택-->
                 <select id="ballSkinSelect" class="option-select">
                     <option value="default">기본</option>
                     <option value="./testImg/baseball.jpg">야구공</option>
@@ -105,7 +105,7 @@
                 </select>
             </div>
             <div class="option-item">
-                <label for="paddleSkinSelect">패들 :</label>
+                <label for="paddleSkinSelect">패들 :</label> <!--패들 선택-->
                 <select id="paddleSkinSelect" class="option-select">
                     <option value="default">기본</option>
                     <option value="wood">나무</option>
@@ -115,14 +115,14 @@
                 </select>
                 </div>
             <div class="option-item">
-                <span>배경음악</span>
+                <span>배경음악</span> <!--음악 선택-->
                 <button id="bgmToggleBtn" class="option-select">켜짐</button>
             </div>
             <button id="closeOptionBtn" class="close-btn">닫기</button>
         </div>
     </div>
 
-        <canvas id="gameCanvas"></canvas>
+        <canvas id="gameCanvas"></canvas> <!--캔버스-->
         <!-- 대화창 (필요할 때만 노출) -->
         <div id="quest-box" class="dialogue-box">
             <div id="dialogueArea">
@@ -135,7 +135,7 @@
                 <button id="startBtn">시작</button>
             </div>
         </div>
-        <div id="gameOverScreen">
+        <div id="gameOverScreen"> <!--게임오버 창-->
             <h2 id="gameOverMessage">게임 오버!</h2>
             
             <div id="finalScoreBoard" class="final-score-board" style="display: none;">
@@ -152,7 +152,7 @@
                 <button class="mainBtn">메인으로</button>
             </div>
         </div>
-        <div id="gamePauseScreen">
+        <div id="gamePauseScreen"> <!--일시정지 창-->
             <h2 id="gamePauseMessage">일시정지</h2>
             <div class="divBtn">
                 <button class="restartBtn">다시 시작</button>
@@ -160,7 +160,7 @@
                 <button class="goodBtn" id="resumeBtn">재개</button>
             </div>
         </div>
-        <div id="gameClearScreen">
+        <div id="gameClearScreen"> <!--클리어 창-->
             <div id="clearMessageContainer">
                 <h2 id="gameClearMessage">스테이지 클리어!</h2>
                 <div id="scoreDisplay">A+</div>

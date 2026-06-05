@@ -1185,7 +1185,7 @@ function drawBall() {
 
 function drawPaddle() {
     const startY = canvas.height - paddleHeight; // 스킨용 변수
-    if (paddleSkinType === "wood"){
+    if (paddleSkinType === "wood"){ //나무 스킨 적용
         let woodGrad = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
         woodGrad.addColorStop(0.0, "#8B5A2B");
         woodGrad.addColorStop(0.3, "#CD853F"); 
@@ -1214,7 +1214,7 @@ function drawPaddle() {
         ctx.closePath();
     }
     else if (paddleSkinType === "steel") {
-        // 금속
+        // 금속 스킨 적용
         const endY = canvas.height;
         let metalGrad = ctx.createLinearGradient(0, startY, 0, endY);
         
@@ -1236,7 +1236,7 @@ function drawPaddle() {
         ctx.stroke();
         ctx.closePath();
     } 
-    else if (paddleSkinType === "uretan"){
+    else if (paddleSkinType === "uretan"){ //우레탄 스킨 적용
         let urethaneGrad = ctx.createLinearGradient(0, startY, 0, canvas.height);
         urethaneGrad.addColorStop(0.0, "#27ae60"); 
         urethaneGrad.addColorStop(0.5, "#1e7e43"); 
@@ -1264,7 +1264,7 @@ function drawPaddle() {
         ctx.closePath();
     }
     else if (paddleSkinType === "rgb") {
-        // RGB 
+        // RGB 스킨 적용
         let gradient = ctx.createLinearGradient(paddleX, 0, paddleX + paddleWidth, 0);
         gradient.addColorStop(0, `hsl(${rgb}, 100%, 50%)`);
         gradient.addColorStop(1, `hsl(${(rgb + 60) % 360}, 100%, 50%)`);
@@ -1583,7 +1583,7 @@ function loadOopStage() {
         positions.forEach((pos, index) => blockGrid[pos.r][pos.c] = { ...blockPool[index], layer: layer });
     }
 
-    // 💡 [패턴 엔진] OOP 보스 전용 가중치 기반 랜덤 공격 생성기
+    // [패턴 엔진] OOP 보스 전용 가중치 기반 랜덤 공격 생성기
     const getBossRandomEffect = (bossX, bossY, bossWidth, bossHeight) => {
         const weightedEffects = [
             { weight: 20, effect: () => setBallOpacity(0.1) }, // 시야 방해
@@ -1653,7 +1653,7 @@ function loadOopStage() {
         });
         newBrick.tempData = { color: bData.color };
 
-        // 🔥 [핵심 아키텍처] 보스 객체의 물리 피격(onHit) 이벤트를 런타임에 낚아채어 오버라이딩
+        // [핵심 아키텍처] 보스 객체의 물리 피격(onHit) 이벤트를 런타임에 낚아채어 오버라이딩
         if (bData.type === "BOSS") {
             let originalOnHit = newBrick.onHit.bind(newBrick); // 물리 엔진의 기본 체력 차감 로직 백업
             
@@ -1824,7 +1824,7 @@ function loadWebPhase1() {
         }
     });
 
-    // 🔥 [무적화] 출력 버튼 HP 고정 (부서지지 않음)
+    // [무적화] 출력 버튼 HP 고정 (부서지지 않음)
     createBtn.onHit = function() {
         if (typeof this.effectFunc === "function") this.effectFunc();
     };
@@ -1866,7 +1866,7 @@ function loadWebPhase2() {
     startScene("startWebprogrammingP2");
 
     let beBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
-        // 💡 2페이즈 전용 백엔드 보스 이미지 삽입
+        // 2페이즈 전용 백엔드 보스 이미지 삽입
    //     imageSrc: "./testImg/be_boss.png", 
         color: "#2ECC71", text: "Node.js API", hp: 15, realType: "BOSS",
         width: canvas.width*0.2, height: canvas.height*0.15,
@@ -1933,25 +1933,25 @@ function switchScreen(screenToDisplay, displayStyle = "flex") {
 }
 
 
-// 대화 관련 함수
+// === 대화 관련 함수 ===
 function startScene(sceneName) {
     isGameStarted = false; // 대화가 시작되면 물리엔진을 멈춤
-    questBox.style.display = "block";
+    questBox.style.display = "block"; // 필요한 UI 출력
     dialogueArea.style.display = "block";
     gameStartArea.style.display = "none";
-    currentScript = allStoryData[sceneName]; 
-    currentIndex = 0; 
-    showDialogue(); 
+    currentScript = allStoryData[sceneName];  // 전체 스크립트 중 필요한 스크립트 로드
+    currentIndex = 0; // 스크립트 인덱스 초기화
+    showDialogue(); // 대화 출력
 }
-function showDialogue() {
-    const speakerEl = document.getElementById("speaker");
-    const dialogueEl = document.getElementById("dialogue");
-    if (currentIndex < currentScript.length) {
+function showDialogue() { // 대화 출력 함수
+    const speakerEl = document.getElementById("speaker"); // speaker 출력 UI
+    const dialogueEl = document.getElementById("dialogue"); // 스크립트 출력 UI
+    if (currentIndex < currentScript.length) { // 스크립트 출력을 다했는지 판단
       const currentLine = currentScript[currentIndex];
-      speakerEl.innerText = currentLine.speaker;
+      speakerEl.innerText = currentLine.speaker; // 내용 출력
       dialogueEl.innerText = currentLine.text;
       const layout = currentLine.layout;
-      switch(layout){
+      switch(layout){ // 스크립트를 기준으로 화면 연출 전환
         case "play":
             canvas.style.visibility = "visible";
             BGMManager.play();
@@ -1991,7 +1991,7 @@ function showDialogue() {
       else handleGameStart();
   }
 }
-function handleGameStart() {
+function handleGameStart() { // 게임시작 전 대화창 처리 함수
         dialogueArea.style.display = "none";  // 대화 UI 숨기기
         gameStartArea.style.display = "block";
 }
@@ -2008,8 +2008,8 @@ function handleSceneEnd() {
     questBox.style.display = 'none';
     clearBtns.style.visibility = "visible";
 }
-function nextDialogue() {
-    if (!currentScript || currentScript.length === 0 || isGameStarted) return; // ★ 이미 게임이 시작됐다면 대화창 이벤트 무시 
+function nextDialogue() { // 다음 대화 출력
+    if (!currentScript || currentScript.length === 0 || isGameStarted) return; // 이미 게임이 시작됐다면 대화창 이벤트 무시 
     currentIndex++;
     showDialogue();
 }
@@ -2169,19 +2169,19 @@ window.addEventListener("keydown", (e) => {
       if (e.key === ' ') e.preventDefault(); //스페이스로 화면 내려가기 방지
       nextDialogue();
   }
-  if (e.key === 'Escape' && !isGameOver){
+  if (e.key === 'Escape' && !isGameOver){ //일시정지 창 esc 키
     isGameStarted = false;
     gamePauseScreen.style.display = "flex";
     BGMManager.pause();
   }
 });
-startBtn.addEventListener('click', () => {
+startBtn.addEventListener('click', () => { // 시작버튼 이벤트 리스너
             questBox.style.display = 'none';
             gameOverScreen.style.display = "none";
             isGameStarted = true; // 스테이지 시작
 });
 
-window.addEventListener("load", () => {
+window.addEventListener("load", () => { // 대화창요소 fetch 긁어오기
     console.log("대화창 관련 요소 로딩 시작");
     const dialogueBox = document.getElementById("quest-box");
     if (dialogueBox) {
@@ -2200,18 +2200,18 @@ async function loadGameData() { //웹서버 구축 후 사용 예정
     const response = await fetch('./scripts.json'); 
     if (!response.ok) throw new Error(`HTTP 상태코드: ${response.status}`);
     
-    allStoryData = await response.json();
+    allStoryData = await response.json(); //전체 스크립트 불러오기
   } catch (error) {
     console.error("데이터를 불러오는 중 에러 발생:", error);
   }
 }
-restartBtn.forEach((item)=>{
+restartBtn.forEach((item)=>{ // 재시작 버튼 이벤트 리스너
     item.addEventListener("click", ()=>{ if(isCleared) currentStage--; initGame(); });
     if (!BGMManager.isPlaying()) {
         BGMManager.play();
     }
 });
-mainBtn.forEach((item)=>{
+mainBtn.forEach((item)=>{ // 메인으로 버튼 이벤트 리스너
     item.addEventListener("click", ()=>{
         // 게임 상태를 종료 처리하여 남아있는 애니메이션 루프를 완전히 차단
         isGameOver = true; 
@@ -2221,7 +2221,7 @@ mainBtn.forEach((item)=>{
         BGMManager.play();
     }
         
-        switchScreen(mainScreen); // 메인 화면
+        switchScreen(mainScreen); // 메인 화면 스위치
         gamePauseScreen.style.display = "none";
         questBox.style.display = "none";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -2230,15 +2230,15 @@ mainBtn.forEach((item)=>{
     });
 });
 nextBtn.addEventListener("click",initGame); //다음으로 버튼
-resumeBtn.addEventListener("click",()=>{
+resumeBtn.addEventListener("click",()=>{ // 재개하기 버튼 이벤트 리스너
     if (!BGMManager.isPlaying()) {
         BGMManager.play();
     }
     isGameStarted = true;
     gamePauseScreen.style.display = "none";
 });
-startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트
-    currentStage = 0; 
+startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트 리스너
+    currentStage = 0; // 현재 스테이지 변수 초기화
     switchScreen(stageSelectModal); 
     
     stageItemBtns.forEach(btn => { //선택가능한 스테이지 목록 갱신
@@ -2285,7 +2285,7 @@ diffItemBtns.forEach(btn => { //난이도 변경 이벤트
     btn.addEventListener("click", (e) => {
         const level = e.currentTarget.getAttribute("value");
         
-        currentDifficulty = level; // ★ 핵심: 이 부분이 빠져있어서 계속 normal로 들어갔습니다!
+        currentDifficulty = level; // 난이도 변경
         
         const selectLevel = diff[level];
         targetPaddleWidth = selectLevel.paddleWidth * 10; 
@@ -2338,7 +2338,7 @@ bgmToggleBtn.addEventListener('click', () => { //브금 토글 이벤트
                 bgmToggleBtn.style.color = "#7f8c8d"; 
                 BGMManager.isMuted = true;
             } 
-            // ② 음악이 멈춰있는 상태라면
+            // 음악이 멈춰있는 상태
             else {
                 BGMManager.play();                  // 음악 켜기 
                 bgmToggleBtn.innerText = "켜짐";  // 버튼 텍스트 변경
@@ -2347,10 +2347,10 @@ bgmToggleBtn.addEventListener('click', () => { //브금 토글 이벤트
             }
         });
 
-howToPlayBtn.addEventListener("click",()=>{
+howToPlayBtn.addEventListener("click",()=>{ // htp 창 이벤트 리스너
     switchScreen(howToPlayModal);
 });
-closeHowToPlayBtn.addEventListener("click",()=>{
+closeHowToPlayBtn.addEventListener("click",()=>{ // htp 창 닫기 리스너
     switchScreen(mainScreen);
 });
 
