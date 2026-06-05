@@ -494,6 +494,25 @@ code { background: #2a2b2d; padding: 2px 6px; border-radius: 4px; color: #fff; }
   border-color: #f1c40f; 
 }
 
+/* 볼륨 슬라이더 스타일 */
+.volume-range {
+  width: 130px;
+  -webkit-appearance: none;
+  height: 6px;
+  background: #444;
+  border-radius: 6px;
+  outline: none;
+}
+.volume-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #f1c40f;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  cursor: pointer;
+}
+
 .option-divider {
   border: 0;
   border-top: 1px solid #333;
