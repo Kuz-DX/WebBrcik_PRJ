@@ -232,7 +232,7 @@ class Brick {
         this.y = y;
 
         const baseSettings = {
-            //status 0:깨진블록 1:일반블록 T:true블록 F:false블록
+            //status 0:깨진블록 1:일반블록
             status: 1,
             effectFunc: ()=>{},
             color: "#787878",
@@ -272,7 +272,7 @@ class Brick {
             if(typeof this.status === "string") this.text = this.status;           
             if (this.text !== "") { //블럭위에 글씨 추가
                 ctx.fillStyle = "#FFFFFF";
-                ctx.font = "bold 14px 'Galmuri11', sans-serif"; // css에 정의된 픽셀 폰트 적용
+                ctx.font = "bold 14px 'Galmuri11', sans-serif";
                 ctx.textAlign = "center";   
                 ctx.textBaseline = "middle";
 
@@ -437,11 +437,11 @@ class SpecialBall {
         if (rand < 0.5) {
             this.text = "팀플";
             this.damage = 3;
-            this.color = "#3498DB"; // 파란색
+            this.color = "#3498DB";
         } else {
             this.text = "랩실습";
             this.damage = 2;
-            this.color = "#E74C3C"; // 빨간색
+            this.color = "#E74C3C";
         }
         
         this.dx = 0;
@@ -490,7 +490,7 @@ class SpecialBall {
             }
         }
         
-        // 바닥 충돌 (소멸 및 HP 감소)
+        // 바닥 충돌
         if (this.y + this.dy > canvas.height - this.radius) {
             this.isActive = false;
             playerHp--; // 체력 깎임
@@ -662,7 +662,7 @@ const BGMManager = {
 // 4. 물리 엔진 및 게임 로직 (충돌, 이동, 아이템)
 // ==========================================
 
-// 1. 순수하게 충돌 후 반사각만 계산하는 물리 전용 함수
+// 충돌 후 반사각 계산
 function applyBrickPhysics(b, closestX, closestY, distanceSquared, distanceX, distanceY) {
     let prevX = x - dx;
     let prevY = y - dy;
@@ -692,7 +692,7 @@ function applyBrickPhysics(b, closestX, closestY, distanceSquared, distanceX, di
     }
 }
 
-// 2. 전체 블록 충돌 감지 흐름 제어
+// 충돌 흐름 제어
 function collisionDetection() {
     let hasCollidedThisFrame = false; 
 
@@ -784,7 +784,7 @@ function updateBombs() {
             bossBombTimer += 16;
             if (bossBombTimer >= 3000) {
                 
-                // 보스 너비가 아닌 캔버스(맵) 가로 전체에서 랜덤 위치 지정
+                //가로 전체에서 랜덤 위치 지정
                 let randomX = Math.random() * (canvas.width - 20) + 10;
                 
                 spawnBomb(randomX, boss.y + boss.height);
@@ -800,7 +800,7 @@ function updateBombs() {
             bossBombTimer += 16;
             if (bossBombTimer >= 4000) {
                 
-                // 완전히 랜덤한 2개의 폭탄 생성
+                // 2개의 램덤 폭탄 생성
                 for (let i = 0; i < 2; i++) {
                     let randomX = Math.random() * (canvas.width - 20) + 10;
                     let randomYOffset = Math.random() * 40; 
@@ -816,7 +816,7 @@ function updateBombs() {
         bombs[i].update();
     }
 }
-// F 폭탄 업데이트 및 난이도 조절 (시간 흐름에 따라)
+// F 업데이트, 난이도 조절
 function updateFBombs() {
     if (currentStage !== 5 || currentWebPhase !== 3 || phase3StartTime === 0) return;
     let elapsed = Date.now() - phase3StartTime; // 살아남은 시간
@@ -824,21 +824,18 @@ function updateFBombs() {
 
     // 시간에 따른 F 난이도 조절
     if (elapsed < 10000) {
-        spawnInterval = 500; // 0.5초마다
-        fallSpeed = 5;       // 속도 5
-        spawnCount = 1;      // 1개씩
+        spawnInterval = 500;
+        fallSpeed = 5;
+        spawnCount = 1;
     } else if (elapsed < 15000) {
-        // 10 ~ 15초
-        spawnInterval = 200; // 0.2초마다
-        fallSpeed = 9;       // 속도 9
-        spawnCount = 3;      // 3개씩
+        spawnInterval = 200;
+        fallSpeed = 9;
+        spawnCount = 3;
     } else {
-        // [15초 이후
-        spawnInterval = 50;  // 0.05초마다
-        fallSpeed = 15;      // 속도 16
-        spawnCount = 5;     // 5개씩 무더기로
+        spawnInterval = 50;
+        fallSpeed = 15;
+        spawnCount = 5;
     }
-
     phase3FSpawnTimer += 16; // 프레임당 시간 더하기
     if (phase3FSpawnTimer >= spawnInterval) {
         for(let i=0; i<spawnCount; i++){
@@ -890,7 +887,7 @@ function spawnSpecialBall() {
         spawnX = boss.x + (boss.width / 2);
         spawnY = boss.y + boss.height + 25;
 
-        // 아래쪽 150도 방향 렌덤 발사 
+        // 아래쪽 150도 방향내 발사 
         let minAngle = 15 * (Math.PI / 180);
         let maxAngle = 165 * (Math.PI / 180);
         let angle = minAngle + Math.random() * (maxAngle - minAngle);
@@ -1142,11 +1139,10 @@ function drawSpecialBalls() {
     }
 }
 
-// 점수 계산 및 상단 UI(Score, 진행바, HP) 통합 그리기 함수
+// 점수 계산 및 상단 UI(Score, 진행바, HP)
 function drawTopUI() {
     // 공통 폰트 베이스 설정
     ctx.textBaseline = "top";
-
     // HP
     ctx.textAlign = "left"; 
     ctx.font = "16px 'Galmuri11',  sans-serif"; 
@@ -1183,11 +1179,11 @@ function drawTopUI() {
     ctx.fillStyle = "#FFD700";
     ctx.fillText(scoreText, canvas.width - 15, 18);
 
-    // PROGRESS BAR
+    // 진행바
     let remainingRatio = 1;
     // 보스인지 확인
     let boss = bricks.find(b => b.realType === "BOSS");
-    // 보스 존재, LOCK이 아니면 진행도를 보스의 체력으로
+    // 보스 존재, 진행도를 보스의 체력으로
     if (boss && boss.status !== "LOCK") {
         remainingRatio = Math.max(0, boss.hp / boss.maxHp);
     } 
@@ -1339,7 +1335,7 @@ function randomBossMap() {
         gLeft = Gates[Math.floor(Math.random() * Gates.length)];
         gRight = Gates[Math.floor(Math.random() * Gates.length)];
 
-        // 경우의 수를 전부 테스트합니다.
+        // 경우의 수를 전부 테스트
         for (let i = 0; i < 8; i++) {
             // 비트 연산을 활용해 T/F 조합 생성
             let v1 = (i & 4) !== 0; 
@@ -1682,18 +1678,10 @@ function loadWebprogrammingStage(){
     if (typeof resizeGame === 'function') {
         resizeGame(1000, 800);
     }
-    
     currentWebPhase = 1; // 페이즈 초기화
-    
-    // 2. 대망의 1페이즈 (프론트엔드 파트) 함수 호출!
     loadWebPhase1();  
-
-
 }
 
-// ---------------------------------------------------------
-//  Phase 1 : HTML UI (Color Table Gimmick - V4 Row Stacking System)
-// ---------------------------------------------------------
 function loadWebPhase1() {
     console.log("웹 프로그래밍 1페이즈: HTML 시작 (행 단위 독립 적재 시스템)");
     
@@ -1701,7 +1689,7 @@ function loadWebPhase1() {
     totalBricks = 9999; // 오직 보스 처치로만 클리어 판정 제어
     resetBallAndPaddle(); 
 
-    // 1. 메인 보스 (HTML UI)
+    // 메인 보스 (HTML UI)
     let feBoss = new BossBrick(canvas.width*0.4, canvas.height*0.1, { 
         imageSrc: "./testImg/hangman0.png",
         color: "#E44D26", text: "", hp: 7, realType: "BOSS",
@@ -1711,7 +1699,7 @@ function loadWebPhase1() {
     });
     bricks.push(feBoss);
 
-    // 2. '출력하기' 버튼 블록 (행 단위 공백 체크 및 단일 행 생성)
+    // '출력하기' 버튼 블록 (행 단위 공백 체크 및 단일 행 생성)
     let createBtn = new Brick(canvas.width*0.25, canvas.height*0.3, {
         color: "#3498DB", text: "출력하기", width:canvas.width*0.2 , height: canvas.height*0.05,
         effectFunc: function() {
@@ -1723,19 +1711,19 @@ function loadWebPhase1() {
 
             let rowToFill = null;
 
-            //  2차원 배열 논리: 각 행을 순회하며 '완전히 비어있는 행'을 탐색
+            // 각 행을 순회하며 비어있는 행 탐색
             for (let i = 0; i < rowYs.length; i++) {
                 let targetY = rowYs[i];
                 
-                // 현재 검사 중인 행(targetY)에 살아있는 색상 블록이 한 개라도 있는지 필터링
+                // 현재 검사 중인 행에 살아있는 색상 블록이 있는지 필터링
                 let aliveBlocksInRow = bricks.filter(b => 
                     b.realType === "COLOR_BLOCK" && b.status !== 0 && b.y === targetY
                 );
 
-                //  값이 하나도 남아있지 않아야(Length가 0이어야) 해당 줄이 완전히 Clear된 것으로 판정
+                //  값이 하나도 남아있지 않아야 해당 줄이 Clear된 것으로 판정
                 if (aliveBlocksInRow.length === 0) {
                     rowToFill = targetY; // 최초로 발견된 빈 행의 Y좌표 저장
-                    break; //  한 줄만 채우고 즉시 루프 탈출 (통으로 채우기 방지)
+                    break; // 통으로 채우기 방지
                 }
             }
 
@@ -1761,12 +1749,12 @@ function loadWebPhase1() {
     };
     bricks.push(createBtn);
 
-    // 3. '없애기' 버튼 블록 (개수와 상관없이 모든 색상 블록 일괄 제거)
+    // 없애기 버튼 블록
     let removeBtn = new Brick(canvas.width*0.55, canvas.height*0.3, {
         color: "#E74C3C", text: "없애기", width: canvas.width*0.2, height: canvas.height*0.05,
         effectFunc: function() {
             let removedCount = 0;
-            // 실시간으로 캔버스에 존재하는 모든 COLOR_BLOCK을 강제 파괴 상태로 전환
+            // 캔버스에 존재하는 모든 COLOR_BLOCK 파괴
             bricks.forEach(b => {
                 if (b.realType === "COLOR_BLOCK" && b.status !== 0) {
                     b.status = 0;
@@ -1814,29 +1802,28 @@ function loadWebPhase2() {
 function loadWebPhase3() {
     bricks = []; bombs = []; brokenBricksCount = 0; 
     fBombs = []; // F 폭탄 초기화
+    specialBalls = [];
+    
     startScene("startWebprogrammingP3");
     totalBricks = 9999; 
     resetBallAndPaddle();
 
-    phase3StartTime = Date.now(); // 타이머 시작!
+    phase3StartTime = Date.now();
     phase3FSpawnTimer = 0;
 
-    console.log("웹 프로그래밍 3페이즈: 보스 없는 순수 F 학점 생존 시작");
-    
-    //  보스 블록(DB Boss) 생성 코드는 완전히 삭제되었습니다!
+    console.log("웹 프로그래밍 3페이즈 시작");
 }
 
 function checkWebPhaseClear() {
-    // 1. 현재 맵에 존재하는 블록 중 진짜 보스("BOSS" 태그)를 찾습니다.
+    // 현재 맵에 존재하는 블록 중 보스를 찾음
     let boss = bricks.find(b => b.realType === "BOSS");
 
-    // 보스가 존재하고, 그 보스의 상태가 0(파괴됨)일 때만 무조건 통과!
-    // (일반 방어벽이 몇 개가 남아있든 완전히 무시합니다)
+    // 보스가 파괴되었을 때만 통과
     if (boss && boss.status === 0) {
         currentWebPhase++; // 페이즈 1 증가
         
         if (currentWebPhase === 2) {
-            // 1초 대기 후 2페이즈 로딩 (연출용 여백)
+            // 1초 대기 후 2페이즈 로딩
             setTimeout(loadWebPhase2, 1000); 
         } 
         else if (currentWebPhase === 3) {
@@ -1844,7 +1831,7 @@ function checkWebPhaseClear() {
             setTimeout(loadWebPhase3, 1000);
         } 
         else {
-            // 3페이즈(최종 DB 보스)까지 다 깼다면 진짜 스테이지 완전 클리어!
+            // 3페이즈까지 다 꺠면 클리어
             setTimeout(StageClear, 1000);
         }
     }
@@ -2082,13 +2069,13 @@ function cheatKeyHandler(e) {
                     boss.status = 0;
                     brokenBricksCount++;
                     boss.effectFunc(); // 다음 페이즈 로딩 함수 강제 실행
-                    console.log(`[치트 발동] ${currentWebPhase}페이즈 보스 즉사!`);
+                    console.log(`${currentWebPhase}페이즈 보스 즉사`);
                 }
             } 
             // 즉시 엔딩 발동
             else if (currentWebPhase === 3) {
                 triggerPhase3Ending();
-                console.log("[치트 발동] 3페이즈 즉시 엔딩 씬 호출!");
+                console.log("3페이즈 엔딩 씬 호출");
             }
         }
     }
@@ -2319,7 +2306,7 @@ closeHowToPlayBtn.addEventListener("click",()=>{ // htp 창 닫기 리스너
 // 8. 메인 엔진 (게임 루프 및 초기화)
 // ==========================================
 
-// === 실시간 점수(100점 만점) 계산 함수 (커트라인 기반 자동 보간) ===
+//점수 계산 함수
 function getCalculatedScore() {
     if (currentStage === 3) return 100; // 점심시간은 무조건 100점(A+)
 
@@ -2337,21 +2324,12 @@ function getCalculatedScore() {
     let score = 100;
 
     // cost가 커트라인을 넘을 때마다 부드럽게 깎임
-    if (cost <= cutlines[0]) {
-        score = 100 - (15 * (cost / cutlines[0])); 
-    } else if (cost <= cutlines[1]) {
-        score = 85 - (15 * ((cost - cutlines[0]) / (cutlines[1] - cutlines[0]))); 
-    } else if (cost <= cutlines[2]) {
-        score = 70 - (15 * ((cost - cutlines[1]) / (cutlines[2] - cutlines[1]))); 
-    } else if (cost <= cutlines[3]) {
-        score = 55 - (15 * ((cost - cutlines[2]) / (cutlines[3] - cutlines[2]))); 
-    } else if (cost <= cutlines[4]) {
-        score = 40 - (10 * ((cost - cutlines[3]) / (cutlines[4] - cutlines[3]))); 
-    } else {
-        //  C등급 이하 구간 코스트 1당 0.3점씩 일정하게 감소
-        score = 30 - ((cost - cutlines[4]) * 0.3);
-    }
-
+    if (cost <= cutlines[0]) score = 100 - (15 * (cost / cutlines[0])); 
+    else if (cost <= cutlines[1]) score = 85 - (15 * ((cost - cutlines[0]) / (cutlines[1] - cutlines[0]))); 
+    else if (cost <= cutlines[2]) score = 70 - (15 * ((cost - cutlines[1]) / (cutlines[2] - cutlines[1]))); 
+    else if (cost <= cutlines[3]) score = 55 - (15 * ((cost - cutlines[2]) / (cutlines[3] - cutlines[2]))); 
+    else if (cost <= cutlines[4]) score = 40 - (10 * ((cost - cutlines[3]) / (cutlines[4] - cutlines[3]))); 
+    else score = 30 - ((cost - cutlines[4]) * 0.3); //  C등급 이하 구간 코스트 1당 0.3점씩 일정하게 감소
     // 최하점은 0점으로
     return Math.max(0, score); 
 }
