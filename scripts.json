@@ -113,14 +113,9 @@
     { "speaker": "나", "text": "안돼... F만은 안돼..." }
   ],
   "ending" : [
-    { "speaker": "", "text": "" },
-    { "speaker": "", "text": "." },
-    { "speaker": "", "text": "..." },
-    { "speaker": "나", "text": "이대로 재수강할 수는 없어..." },
-    { "speaker": "나", "text": "내 모든 능력을 써서..." },
-    { "speaker": "나", "text": "지피티 Plus, 제미나이 Pro, 클로드 Pro..." },
-    { "speaker": "나", "text": "돌려놓고 직접 짠 척하기!" },
     { "speaker": "나", "text": "후... 완성했다..." },
+    { "speaker": "나", "text": "지피티 Plus, 제미나이 Pro, 클로드 Pro..." },
+    { "speaker": "나", "text": "덕분에 F를 피할 수 있었어..." },
     { "speaker": "나", "text": "하얗게 불태웠어..." ,"layout" : "white" },
     { "speaker": "나", "text": "오늘 수업 끝이다......" },
     { "speaker": "나", "text": "....." },
