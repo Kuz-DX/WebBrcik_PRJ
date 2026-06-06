@@ -1498,7 +1498,7 @@ function loadOopStage() {
             blockPool.push({ type: "protected_B", text: "MyData B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
             while (blockPool.length < numBlocks) blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
         } else if (layer === 1) { 
-            blockPool.push({ type: "BOSS", text: "???", color: COLOR_BOSS, hp: 10, indestructible: false ,realText:"BLUEJOA"});
+            blockPool.push({ type: "BOSS", text: "???", color: COLOR_BOSS, hp: 10, indestructible: false, realText: "BLUEJOA", imageSrc: "./testImg/OopBoss.png" });
         }
 
         for (let i = blockPool.length - 1; i > 0; i--) {
@@ -2345,13 +2345,22 @@ function triggerPhase3Ending() {
     let endingVideo = document.getElementById("endingVideo");
     
     if (endingVideo) {
+        const shouldResumeBgm = BGMManager.isPlaying() && !BGMManager.isMuted;
+        BGMManager.pause();
         endingVideo.style.display = "block";
+        endingVideo.currentTime = 0;
+        endingVideo.playbackRate = BGMManager.playbackRate || 1;
+        const bgmVol = BGMManager.audio ? BGMManager.audio.volume : BGMManager.defaultVolume;
+        endingVideo.volume = Math.max(0, Math.min(1, bgmVol));
         endingVideo.play();
         
-        // 영상 재생이끝나면 클리어 화면
+        // 영상 재생이 끝나면 클리어 화면
         endingVideo.onended = function() {
             endingVideo.style.display = "none";
             clearGame();
+            if (shouldResumeBgm) {
+                BGMManager.play();
+            }
         };
     } else {
         // 만약 비디오 요소가 아직 HTML에 없다면 임시로 바로 클리어 처리
