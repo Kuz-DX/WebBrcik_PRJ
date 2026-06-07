@@ -173,8 +173,8 @@ class Bomb { //폭탄배열
         
         // 바닥에 닿으면 게임 오버
         if (this.y + this.radius > canvas.height) {
-            // 2페이즈에서는 게임오버 대신 체력 감소
-            if (currentStage === 5 && currentWebPhase === 2) {
+            // 1, 2페이즈에서는 게임오버 대신 체력 감소
+            if (currentStage === 5 && (currentWebPhase === 1 || currentWebPhase === 2)) {
                 playerHp--;
                 paddleHitCount += 10;
                 if (playerHp <= 0) {
