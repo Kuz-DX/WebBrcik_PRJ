@@ -329,7 +329,7 @@ class BossBrick extends Brick {
         const drawHeight = this.height || brickHeight;
         
         // 이미지가 있고 로딩이 완료되었다면 이미지를 출력
-        if (this.image && this.image.complete) {
+        if (this.image && this.image.complete&&this.status !== "LOCK") {
             ctx.drawImage(this.image, this.x, this.y, drawWidth, drawHeight);
         } else {
             // 이미지가 없거나 로딩 전이면 기존처럼 색상 사각형 출력
@@ -359,8 +359,8 @@ class BossBrick extends Brick {
     }
     expand() { //보스 커지는거
         if (this.realType === "BOSS" && this.status === "LOCK") {
-            let expandWidth = brickWidth * 2;
-            let expandHeight = brickHeight * 2; 
+            let expandWidth = brickWidth * 2.5;
+            let expandHeight = brickHeight * 6; 
             
             this.x = this.x + (this.width / 2) - (expandWidth / 2);
             this.y = this.y + (this.height / 2) - (expandHeight / 2);
@@ -370,7 +370,6 @@ class BossBrick extends Brick {
             if (this.tempData) this.color = this.tempData.color;
             this.status = 1;
 
-            this.text = this.realText;
         }
     }
 }
@@ -1498,7 +1497,7 @@ function loadOopStage() {
             blockPool.push({ type: "protected_B", text: "MyData B", color: COLOR_PROTECTED, hp: 1, indestructible: false });
             while (blockPool.length < numBlocks) blockPool.push({ type: "normal", text: "", color: COLOR_NORMAL, hp: 1, indestructible: false });
         } else if (layer === 1) { 
-            blockPool.push({ type: "BOSS", text: "???", color: COLOR_BOSS, hp: 10, indestructible: false ,realText:"BLUEJOA"});
+            blockPool.push({ type: "BOSS", text: "???", color: COLOR_BOSS, hp: 10, indestructible: false ,realText:" ",imageSrc: "./testImg/oopboss.png" });
         }
 
         for (let i = blockPool.length - 1; i > 0; i--) {
@@ -1574,7 +1573,8 @@ function loadOopStage() {
 
         let newBrick = new BossBrick(brickX, brickY, {
             status: initialStatus, color: initialColor, text: initialText, realText: bData.realText || bData.text, 
-            realType: bData.type, layer: bData.layer, effectFunc: effect, hp: bData.hp, indestructible: bData.indestructible
+            realType: bData.type, layer: bData.layer, effectFunc: effect, hp: bData.hp, indestructible: bData.indestructible,
+            imageSrc: bData.imageSrc
         });
         newBrick.tempData = { color: bData.color };
 
