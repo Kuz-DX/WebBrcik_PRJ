@@ -2197,7 +2197,7 @@ closeDifficultyBtn.addEventListener("click", () => { difficultyModal.style.displ
 
 stageItemBtns.forEach(btn => { //스테이지 선택 이벤트
     btn.addEventListener("click", (e) => {
-        let selectedStage = parseInt(e.target.getAttribute("value"));
+        let selectedStage = parseInt(e.currentTarget.getAttribute("value"));
         stageSelectModal.style.display = "none";
         mainScreen.style.display = "none";
         currentStage = selectedStage;
