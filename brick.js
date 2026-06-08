@@ -124,8 +124,8 @@ const statusMap = {
 };
 
 const diff = { //난이도 객체
-    easy: { paddleWidth : 15, speed : 8, bombProb : 3 },
-    normal: { paddleWidth : 12, speed : 10, bombProb : 10 },
+    easy: { paddleWidth : 15, speed : 4, bombProb : 3 },
+    normal: { paddleWidth : 12, speed : 8, bombProb : 10 },
     gosu : { paddleWidth : 10, speed : 12, bombProb : 12 },
     goat : { paddleWidth : 7, speed : 15, bombProb : 20 }
 };
