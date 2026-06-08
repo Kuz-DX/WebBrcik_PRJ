@@ -125,9 +125,9 @@ const statusMap = {
 
 const diff = { //난이도 객체
     easy: { paddleWidth : 15, speed : 4, bombProb : 3 },
-    normal: { paddleWidth : 12, speed : 8, bombProb : 10 },
-    gosu : { paddleWidth : 10, speed : 12, bombProb : 12 },
-    goat : { paddleWidth : 7, speed : 15, bombProb : 20 }
+    normal: { paddleWidth : 12, speed : 7, bombProb : 10 },
+    gosu : { paddleWidth : 10, speed : 10, bombProb : 12 },
+    goat : { paddleWidth : 7, speed : 13, bombProb : 20 }
 };
 
 //대화창 관련 변수
@@ -2321,7 +2321,7 @@ function getCalculatedScore() {
         case 1: cutlines = [35, 45, 60, 70, 85]; break; //이산
         case 2: cutlines = [50, 60, 75, 85, 100]; break; //객지프
         case 4: cutlines = [25, 35, 50, 60, 80]; break; //자구
-        case 5: cutlines = [60, 75, 90, 105, 130]; break; //웹프
+        case 5: cutlines = [50, 65, 85, 100, 120]; break; //웹프
         default: cutlines = [20, 30, 40, 50, 60];
     }
 
