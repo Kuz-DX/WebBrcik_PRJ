@@ -294,6 +294,7 @@ class BossBrick extends Brick {
         this.isIndestructible = option.indestructible || false; 
         
         this.realText = option.realText || option.text || ""; 
+        // 블록에 보일 텍스트
         this.realType = option.realType || ""; 
         this.borderColor = option.borderColor || "";
         this.borderWidth = option.borderWidth || 4;
@@ -357,7 +358,7 @@ class BossBrick extends Brick {
             ctx.fillText(this.text, this.x + drawWidth / 2, this.y + drawHeight / 2);
         }
     }
-    expand() { //보스 커지는거
+    expand() { //보스 타입인 블록의 크기가 증가되며, 이미지가 채워지게끔
         if (this.realType === "BOSS" && this.status === "LOCK") {
             let expandWidth = brickWidth * 2.5;
             let expandHeight = brickHeight * 6; 
@@ -726,6 +727,8 @@ function checkPaddleCollision() {
             let normalizedHit = hitPoint / ((paddleWidth / 2) + ballRadius);
             normalizedHit = Math.max(-1, Math.min(1, normalizedHit));
             let bounceAngle = normalizedHit * (Math.PI / 3); 
+            //부딪히는 위치에 따라 공이 튕기게끔 구현.
+            //-60~+60
             
             dx = ballSpeed * Math.sin(bounceAngle);
             dy = -ballSpeed * Math.cos(bounceAngle); 
@@ -763,7 +766,7 @@ function updateBall(){
 }
 
 // 패들 부드러운 위치 업데이트 함수
-function updatePaddle(){ //함수화
+function updatePaddle(){ 
     let previousWidth = paddleWidth; 
     paddleWidth += (targetPaddleWidth - paddleWidth) * 0.016; 
 
@@ -2508,11 +2511,25 @@ function clearGame(){
     }
 }
 
-function resetBallAndPaddle() { //공, 패들 리셋 함수
+function resetBallAndPaddle() { // 공, 패들 리셋 함수
+    // 💡 1. 현재 난이도에 맞는 기본 패들 크기 가져오기
+    const selectLevel = diff[currentDifficulty];
+    const basePaddleWidth = selectLevel.paddleWidth * 10; 
+    
+    // 💡 2. 패들 현재 크기와 목표 크기를 모두 난이도 기본값으로 완전 초기화
+    paddleWidth = basePaddleWidth;
+    targetPaddleWidth = basePaddleWidth;
+
+    // 3. 기존 공 및 패들 위치 초기화 로직
     x = canvas.width / 2;
     y = canvas.height - 30;
     const startAngle = (Math.random() - 0.5) * Math.PI / 2; 
-    dx = ballSpeed * Math.sin(startAngle); dy = -ballSpeed * Math.cos(startAngle);
+    
+    // 볼 스피드도 혹시 모르니 난이도 기준으로 동기화
+    ballSpeed = selectLevel.speed;
+    dx = ballSpeed * Math.sin(startAngle); 
+    dy = -ballSpeed * Math.cos(startAngle);
+    
     paddleX = (canvas.width - paddleWidth) / 2;
 }
 
