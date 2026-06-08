@@ -773,6 +773,9 @@ function updatePaddle(){
 
     paddleX =paddleX- (paddleWidth - previousWidth) / 2;
 
+    if (paddleX < 0) {
+        paddleX = 0;
+    }
     if (paddleX + paddleWidth > canvas.width) {
         paddleX = canvas.width - paddleWidth;
     }
