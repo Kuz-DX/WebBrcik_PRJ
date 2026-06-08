@@ -360,6 +360,7 @@ class BossBrick extends Brick {
     }
     expand() { //보스 타입인 블록의 크기가 증가되며, 이미지가 채워지게끔
         if (this.realType === "BOSS" && this.status === "LOCK") {
+            let realText="";
             let expandWidth = brickWidth * 2.5;
             let expandHeight = brickHeight * 6; 
             
@@ -1559,7 +1560,8 @@ function loadOopStage() {
                 bricks.forEach(b => {
                     if (b.layer === bData.layer - 1 && b.status === "LOCK") {
                         if (b.realType === "BOSS") {
-                            b.expand(); 
+                            resetBallAndPaddle()
+                            b.expand();
                         } else {
                             b.status = 1; 
                             if (b.tempData) b.color = b.tempData.color; 
@@ -2512,11 +2514,11 @@ function clearGame(){
 }
 
 function resetBallAndPaddle() { // 공, 패들 리셋 함수
-    // 💡 1. 현재 난이도에 맞는 기본 패들 크기 가져오기
+    //  1. 현재 난이도에 맞는 기본 패들 크기 가져오기
     const selectLevel = diff[currentDifficulty];
     const basePaddleWidth = selectLevel.paddleWidth * 10; 
     
-    // 💡 2. 패들 현재 크기와 목표 크기를 모두 난이도 기본값으로 완전 초기화
+    //  2. 패들 현재 크기와 목표 크기를 모두 난이도 기본값으로 완전 초기화
     paddleWidth = basePaddleWidth;
     targetPaddleWidth = basePaddleWidth;
 
