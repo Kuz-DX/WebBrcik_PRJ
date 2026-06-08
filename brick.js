@@ -1561,6 +1561,7 @@ function loadOopStage() {
                     if (b.layer === bData.layer - 1 && b.status === "LOCK") {
                         if (b.realType === "BOSS") {
                             resetBallAndPaddle()
+                            b.text = b.realText;
                             b.expand();
                         } else {
                             b.status = 1; 
