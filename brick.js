@@ -923,7 +923,7 @@ function setBallOpacity(opacity) { // 공 투명도 조절 함수
         opacityTimeoutId = null;
     }, 10000);
 }
-function subBarsize(){ targetPaddleWidth = Math.max(40, targetPaddleWidth - 50); }
+function subBarsize(){ targetPaddleWidth = Math.max(canvas.width * 0.08, targetPaddleWidth - 50); }
 function addBarsize(){ targetPaddleWidth = Math.min(canvas.width/2, targetPaddleWidth + 50); }
 function spawnRandomBrick() { //블럭을 깨고 다시 블럭이 랜덤위치에 생성되는 기능
     const randomX = Math.random() * (canvas.width - brickWidth);
@@ -2063,6 +2063,100 @@ function cheatKeyHandler(e) {
             }
         }
         brokenBricksCount += destroyedByCheat;
+    }
+
+    // X키 치트: 객체지향 스테이지에서 현재 열린 계층을 하나씩 제거
+    if (e.key === 'x' || e.key === 'X') {
+
+    // 객체지향 스테이지가 아니면 객체지향 스테이지로 이동
+        if (currentStage !== 2) {
+            currentStage = 2;
+            initGame();
+            return;
+        }
+
+    // 현재 열려 있는 계층 찾기
+        const activeLayers = bricks
+        .filter(b =>
+            b.layer !== undefined &&
+            b.status === 1
+            )
+        .map(b => b.layer);
+
+        if (activeLayers.length === 0) {
+            return;
+        }
+
+    // 객체지향 스테이지는 4층이 바깥, 1층이 보스
+        const targetLayer = Math.max(...activeLayers);
+
+        let destroyedCount = 0;
+
+    // 내부 연결 블록 제거 전용 함수
+        const destroyLinkedProtectedBlock = (getterType) => {
+            let targetType = null;
+
+            if (getterType === "protected_getK") targetType = "protected_K";
+            if (getterType === "protected_getB") targetType = "protected_B";
+
+            if (!targetType) return;
+
+            const target = bricks.find(b =>
+                b.layer === 2 &&
+                b.realType === targetType &&
+                b.status !== 0
+                );
+
+            if (target) {
+                target.status = 0;
+                destroyedCount++;
+            }
+        };
+
+        bricks.forEach(b => {
+            if (b.layer === targetLayer && b.status !== 0) {
+
+            // protected getter일 때만 연결된 내부 protected 변수도 제거
+                if (
+                    b.realType === "protected_getK" ||
+                    b.realType === "protected_getB"
+                    ) {
+                    destroyLinkedProtectedBlock(b.realType);
+            }
+            // 패들 크기 변경, 공 투명화, 폭탄 생성 등 부작용 방지
+            if (b.status !== 0) {
+                b.status = 0;
+                destroyedCount++;
+            }
+        }
+    });
+
+        brokenBricksCount += destroyedCount;
+
+
+    // 다음 안쪽 계층 해금
+        const nextLayer = targetLayer - 1;
+
+        bricks.forEach(b => {
+            if (b.layer === nextLayer && b.status === "LOCK") {
+
+                if (b.realType === "BOSS") {
+                    resetBallAndPaddle();
+                    b.text = b.realText;
+                    b.expand();
+                    b.hp = b.maxHp;
+                    b.status = 1;
+                } else {
+                    b.status = 1;
+
+                    if (b.tempData) {
+                        b.color = b.tempData.color;
+                    }
+
+                    b.text = b.realText;
+                }
+            }
+        });
     }
     
     // R (고속 스킵용: 이산수학 맵 스킵 & 웹프로그래밍 페이즈 스킵)
