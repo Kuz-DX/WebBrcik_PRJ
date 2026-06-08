@@ -1926,6 +1926,7 @@ function handleSceneEnd() {
     }
     if (currentStage == 4) {
         gameClearScreen.style.display = "flex";
+        finalScore = 100;
     }
     questBox.style.display = 'none';
     clearBtns.style.visibility = "visible";
@@ -2155,6 +2156,7 @@ mainBtn.forEach((item)=>{ // 메인으로 버튼 이벤트 리스너
         switchScreen(mainScreen); // 메인 화면 스위치
         gamePauseScreen.style.display = "none";
         questBox.style.display = "none";
+        gameClearScreen.style.display = "none";
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         resizeGame(800,600);
         canvas.style.backgroundImage = "none"; // 이전 스테이지의 배경 이미지를 확실하게 제거
