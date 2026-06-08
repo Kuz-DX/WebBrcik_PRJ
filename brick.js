@@ -2312,11 +2312,11 @@ function getCalculatedScore() {
 
     let cutlines;
     switch(currentStage) {
-        case 0: cutlines = [18, 24, 30, 35, 50]; break; //튜토    
-        case 1: cutlines = [29, 35, 45, 55, 65]; break; //이산
-        case 2: cutlines = [25, 30, 40, 45, 60]; break; //객지프
-        case 4: cutlines = [15, 25, 35, 45, 60]; break; //자구
-        case 5: cutlines = [25, 35, 55, 65, 80]; break; //웹프
+        case 0: cutlines = [25, 35, 50, 60, 80]; break; //튜토    
+        case 1: cutlines = [35, 45, 60, 70, 85]; break; //이산
+        case 2: cutlines = [50, 60, 75, 85, 100]; break; //객지프
+        case 4: cutlines = [25, 35, 50, 60, 80]; break; //자구
+        case 5: cutlines = [60, 75, 90, 105, 130]; break; //웹프
         default: cutlines = [20, 30, 40, 50, 60];
     }
 
