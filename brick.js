@@ -2103,6 +2103,7 @@ window.addEventListener("keydown", (e) => {
     isGameStarted = false;
     gamePauseScreen.style.display = "flex";
     BGMManager.pause();
+    stopLoop(); // 일시정지 중에는 루프를 완전히 멈춰 둠 (재개 시 새로 시작)
   }
 });
 startBtn.addEventListener('click', () => { // 시작버튼 이벤트 리스너
@@ -2147,7 +2148,7 @@ mainBtn.forEach((item)=>{ // 메인으로 버튼 이벤트 리스너
         document.querySelector(".restartBtn").style.display = "block";
         isGameOver = true; 
         isGameStarted = false;
-        if (animationId !== null) cancelAnimationFrame(animationId);
+        stopLoop(); // 남아있는 애니메이션 루프를 통합 함수로 확실히 정지
         if (!BGMManager.isPlaying()) {
         BGMManager.play();
     }
@@ -2167,6 +2168,7 @@ resumeBtn.addEventListener("click",()=>{ // 재개하기 버튼 이벤트 리스
     }
     isGameStarted = true;
     gamePauseScreen.style.display = "none";
+    startLoop(); // 멈춰 둔 루프를 다시 시작 (중복 실행은 startLoop 내부에서 방지)
 });
 startNewGameBtn.addEventListener("click", () => { //게임 시작 버튼 이벤트 리스너
     currentStage = 0; // 현재 스테이지 변수 초기화
@@ -2546,8 +2548,8 @@ function resetBallAndPaddle() { // 공, 패들 리셋 함수
 }
 
 function initGame() {
-    //기존 게임 루프 끄기
-    if (animationId !== null) cancelAnimationFrame(animationId);
+    //기존 게임 루프 끄기 (중복 루프 방지를 위해 통합 함수 사용)
+    stopLoop();
 
     resetBallAndPaddle();
     brokenBricksCount = 0;
@@ -2570,11 +2572,28 @@ function initGame() {
     switchScreen(); // UI 숨기기
     gamePauseScreen.style.display = "none";
     loadStage(currentStage);
-    loop();
+    startLoop();
+}
+
+// 루프 시작/정지 통합 제어 (requestAnimationFrame 중복 실행 방지)
+function startLoop() {
+    // 예약된 프레임이 있으면 먼저 취소하여 루프가 두 개 이상 겹치지 않게 함
+    if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+    animationId = requestAnimationFrame(loop);
+}
+function stopLoop() {
+    if (animationId !== null) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
 }
 
 // 메인 게임 루프 (draw 이름이 겹쳐서 loop로 변경)
 function loop() { 
+    animationId = null; // 이 프레임이 실행되었으므로 예약된 프레임은 없음(중복 추적 방지)
     if (isGameOver) return; // 게임 오버 상태면 그리기 루프 중단
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
