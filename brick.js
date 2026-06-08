@@ -2134,6 +2134,7 @@ restartBtn.forEach((item)=>{ // 재시작 버튼 이벤트 리스너
 mainBtn.forEach((item)=>{ // 메인으로 버튼 이벤트 리스너
     item.addEventListener("click", ()=>{
         // 게임 상태를 종료 처리하여 남아있는 애니메이션 루프를 완전히 차단
+        document.querySelector(".restartBtn").style.display = "block";
         isGameOver = true; 
         isGameStarted = false;
         if (animationId !== null) cancelAnimationFrame(animationId);
@@ -2393,6 +2394,7 @@ function endGame(message, isAllClear = false) {
     //  모든 스테이지를 클리어한 경우 최종 gpa
     if (isAllClear) {
         currentStage = 0; 
+        document.querySelector(".restartBtn").style.display = "none";
         const gpaMap = { "A+": 4.5, "A": 4.0, "B+": 3.5, "B": 3.0, "C+": 2.5, "C": 2.0, "F": 0 };
         const stageNames = ["C프로그래밍", "이산수학", "객체지향프로그래밍", "점심시간", "자료구조", "웹프로그래밍"];
         
