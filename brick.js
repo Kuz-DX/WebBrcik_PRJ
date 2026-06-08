@@ -2063,9 +2063,17 @@ function cheatKeyHandler(e) {
         brokenBricksCount += destroyedByCheat;
     }
     
-    // R (웹프로그래밍 페이즈 고속 스킵용)
+    // R (고속 스킵용: 이산수학 맵 스킵 & 웹프로그래밍 페이즈 스킵)
     if (e.key === 'r' || e.key === 'R') {
-        if (currentStage === 5) {
+        
+        // 이산수학 맵 고속 스킵
+        if (currentStage === 1) {
+            console.log("이산수학 맵 스킵 발동!");
+            StageClear(); // 즉시 맵 클리어 처리를 하여 다음 맵으로 넘기거나 스테이지를 클리어함
+        }
+        
+        // 기존 웹프로그래밍(스테이지 5) 페이즈 스킵
+        else if (currentStage === 5) {
             // 현재 떠 있는 보스를 즉사
             if (currentWebPhase === 1 || currentWebPhase === 2) {
                 let boss = bricks.find(b => b.realType === "BOSS");
